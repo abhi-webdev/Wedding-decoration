@@ -41,19 +41,37 @@ class GalleryItem extends Model
         return $this->belongsTo(GalleryCategory::class, 'gallery_category_id');
     }
 
-    public function getImagePathAttribute()
+    public function getImagePathAttribute(): ?string
     {
-        return $this->image ?: ($this->image_url ?: 'images/decorations/jaimala-stage-01.jpg');
+        return $this->image ?: $this->image_url;
     }
 
-    public function getDisplayImageAttribute()
+    public function getDisplayImageAttribute(): ?string
     {
-        if ($this->image && file_exists(public_path($this->image))) {
-            return asset($this->image);
+        $img = $this->image ?: $this->image_url;
+        if (empty($img)) {
+            return null;
         }
-        if ($this->image_url) {
-            return asset($this->image_url);
+        if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+            return null;
         }
-        return asset('images/decorations/jaimala-stage-01.jpg');
+        if (file_exists(public_path($img))) {
+            return asset($img);
+        }
+        if (file_exists(public_path('storage/' . $img))) {
+            return asset('storage/' . $img);
+        }
+        if (str_starts_with($img, 'uploads/')) {
+            return asset($img);
+        }
+        if (str_starts_with($img, 'storage/')) {
+            return asset($img);
+        }
+        return null;
+    }
+
+    public function getSafeImageUrlAttribute(): ?string
+    {
+        return $this->display_image;
     }
 }

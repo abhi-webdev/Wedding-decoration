@@ -15,6 +15,7 @@ class Payment extends Model
         'quotation_id',
         'user_id',
         'payment_reference',
+        'receipt_number',
         'amount',
         'payment_type',
         'payment_method',
@@ -22,17 +23,26 @@ class Payment extends Model
         'transaction_reference',
         'payment_date',
         'notes',
+        'rejection_reason',
         'recorded_by',
+        'verified_by',
+        'verified_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'payment_date' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     public static function generatePaymentReference(): string
     {
         return 'AUP-' . date('Ymd') . '-' . strtoupper(Str::random(5));
+    }
+
+    public static function generateReceiptNumber(): string
+    {
+        return 'AUR-' . date('Ymd') . '-' . strtoupper(Str::random(5));
     }
 
     public function booking()
@@ -58,6 +68,11 @@ class Payment extends Model
     public function recordedByUser()
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function verifiedByUser()
+    {
+        return $this->belongsTo(User::class, 'verified_by');
     }
 
     public function recorder()
@@ -92,12 +107,24 @@ class Payment extends Model
         };
     }
 
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'paid', 'accepted', 'successful' => 'Verified & Accepted',
+            'pending' => 'Pending Verification',
+            'rejected', 'failed' => 'Rejected',
+            'refunded' => 'Refunded',
+            'cancelled' => 'Cancelled',
+            default => ucfirst(str_replace('_', ' ', $this->status)),
+        };
+    }
+
     public function getStatusBadgeClassesAttribute(): string
     {
         return match ($this->status) {
-            'paid', 'successful' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+            'paid', 'accepted', 'successful' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
             'pending' => 'bg-amber-100 text-amber-800 border-amber-300',
-            'failed' => 'bg-red-100 text-red-800 border-red-300',
+            'rejected', 'failed' => 'bg-red-100 text-red-800 border-red-300',
             'refunded' => 'bg-purple-100 text-purple-800 border-purple-300',
             'cancelled' => 'bg-slate-100 text-slate-700 border-slate-300',
             default => 'bg-slate-100 text-slate-700 border-slate-300',

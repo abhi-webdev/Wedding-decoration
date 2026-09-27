@@ -100,7 +100,7 @@ class AdminDecorationController extends Controller
         }
 
         // Handle primary image upload
-        $imagePath = 'images/decorations/jaimala-stage-01.jpg'; // fallback
+        $imagePath = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
             $fileName = Str::slug($validated['name']) . '-' . time() . '-' . Str::random(6) . '.' . $file->getClientOriginalExtension();
@@ -135,14 +135,16 @@ class AdminDecorationController extends Controller
             'is_available' => true,
         ]);
 
-        // Save image record in decoration_images
-        DecorationImage::create([
-            'decoration_id' => $decoration->id,
-            'image_url' => $imagePath,
-            'caption' => $decoration->name,
-            'is_primary' => true,
-            'display_order' => 1,
-        ]);
+        // Save image record in decoration_images if uploaded
+        if ($imagePath) {
+            DecorationImage::create([
+                'decoration_id' => $decoration->id,
+                'image_url' => $imagePath,
+                'caption' => $decoration->name,
+                'is_primary' => true,
+                'display_order' => 1,
+            ]);
+        }
 
         AdminActivityLog::log('Created Decoration', 'Decoration', $decoration->id, "Created new decoration: {$decoration->name}");
 
@@ -193,10 +195,19 @@ class AdminDecorationController extends Controller
             'is_popular' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
 
         $basePrice = $validated['base_price'] ?? $validated['price'] ?? $decoration->base_price;
         $discountPrice = $validated['discount_price'] ?? null;
+
+        // Handle explicit image removal
+        if ($request->boolean('remove_image')) {
+            if ($decoration->primary_image && str_starts_with($decoration->primary_image, 'uploads/decorations/') && file_exists(public_path($decoration->primary_image))) {
+                @unlink(public_path($decoration->primary_image));
+            }
+            $decoration->primary_image = null;
+        }
 
         // If new image uploaded
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
@@ -209,7 +220,7 @@ class AdminDecorationController extends Controller
             $file->move($destPath, $fileName);
             $newImagePath = 'uploads/decorations/' . $fileName;
 
-            // Optional cleanup of old upload if local
+            // Cleanup old upload if local
             if ($decoration->primary_image && str_starts_with($decoration->primary_image, 'uploads/decorations/') && file_exists(public_path($decoration->primary_image))) {
                 @unlink(public_path($decoration->primary_image));
             }
@@ -232,6 +243,7 @@ class AdminDecorationController extends Controller
             'tagline' => $validated['tagline'] ?? $decoration->tagline,
             'short_description' => $validated['short_description'] ?? $decoration->short_description,
             'description' => $validated['description'],
+            'primary_image' => $decoration->primary_image,
             'location' => $validated['location'] ?? $decoration->location,
             'starting_price' => (int)$basePrice,
             'base_price' => $basePrice,
@@ -267,35 +279,53 @@ class AdminDecorationController extends Controller
     }
 
     /**
-     * Upload an extra gallery image for the decoration.
+     * Upload extra gallery images for the decoration (supports single or multiple files).
      */
     public function uploadImage(Request $request, $id)
     {
         $decoration = Decoration::findOrFail($id);
 
         $request->validate([
-            'gallery_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'gallery_images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'caption' => 'nullable|string|max:255',
         ]);
 
-        $file = $request->file('gallery_image');
-        $fileName = 'dec_extra_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+        $files = [];
+        if ($request->hasFile('gallery_images')) {
+            $files = $request->file('gallery_images');
+        } elseif ($request->hasFile('gallery_image')) {
+            $files = [$request->file('gallery_image')];
+        }
+
+        if (empty($files)) {
+            return back()->with('error', 'Please select at least one valid image file to upload.');
+        }
+
         $destPath = public_path('uploads/decoration-gallery');
         if (!file_exists($destPath)) {
             mkdir($destPath, 0755, true);
         }
-        $file->move($destPath, $fileName);
-        $imagePath = 'uploads/decoration-gallery/' . $fileName;
 
-        DecorationImage::create([
-            'decoration_id' => $decoration->id,
-            'image_url' => $imagePath,
-            'caption' => $request->input('caption') ?: $decoration->name,
-            'is_primary' => false,
-            'display_order' => $decoration->images()->count() + 1,
-        ]);
+        $uploadedCount = 0;
+        foreach ($files as $file) {
+            if ($file && $file->isValid()) {
+                $fileName = 'dec_extra_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                $file->move($destPath, $fileName);
+                $imagePath = 'uploads/decoration-gallery/' . $fileName;
 
-        return back()->with('success', 'New gallery image uploaded successfully.');
+                DecorationImage::create([
+                    'decoration_id' => $decoration->id,
+                    'image_url' => $imagePath,
+                    'caption' => $request->input('caption') ?: $decoration->name,
+                    'is_primary' => false,
+                    'display_order' => $decoration->images()->count() + 1,
+                ]);
+                $uploadedCount++;
+            }
+        }
+
+        return back()->with('success', "{$uploadedCount} gallery image(s) uploaded successfully.");
     }
 
     /**

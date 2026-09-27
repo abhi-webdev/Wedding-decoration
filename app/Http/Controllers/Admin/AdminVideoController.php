@@ -158,6 +158,8 @@ class AdminVideoController extends Controller
             'description' => 'nullable|string',
             'video_file' => 'nullable|file|mimes:mp4,webm,mov,ogg|max:102400',
             'thumbnail_file' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_video' => 'nullable|boolean',
+            'remove_thumbnail' => 'nullable|boolean',
             'video_type' => 'required|in:reel,short,event_highlight,portfolio,behind_the_scenes',
             'event_type' => 'required|in:jaimala,mandap,haldi,mehendi,sangeet,reception,general',
             'category_id' => 'nullable|exists:categories,id',
@@ -171,6 +173,20 @@ class AdminVideoController extends Controller
 
         $videoPath = $video->video_path;
         $thumbnailPath = $video->thumbnail_path;
+
+        if ($request->boolean('remove_video')) {
+            if ($video->video_path && str_starts_with($video->video_path, 'uploads/videos/') && file_exists(public_path($video->video_path))) {
+                @unlink(public_path($video->video_path));
+            }
+            $videoPath = null;
+        }
+
+        if ($request->boolean('remove_thumbnail')) {
+            if ($video->thumbnail_path && str_starts_with($video->thumbnail_path, 'uploads/video-thumbnails/') && file_exists(public_path($video->thumbnail_path))) {
+                @unlink(public_path($video->thumbnail_path));
+            }
+            $thumbnailPath = null;
+        }
 
         if ($request->hasFile('video_file') && $request->file('video_file')->isValid()) {
             $videoFile = $request->file('video_file');

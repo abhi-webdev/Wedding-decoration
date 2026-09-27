@@ -2,14 +2,23 @@
 
 <div class="group bg-white rounded-xl overflow-hidden border border-brand-light-border shadow-soft-luxury hover:shadow-card-hover transition-all duration-300 flex flex-col h-full relative">
     <!-- Image & Badges -->
-    <div class="relative h-48 sm:h-60 overflow-hidden bg-brand-offwhite">
-        <img 
-            src="{{ $decoration->safe_primary_image }}" 
-            alt="Traditional Bihar {{ $decoration->name }} setup in {{ $decoration->location }}" 
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-            loading="lazy"
-            onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-        />
+    <div class="relative h-48 sm:h-60 overflow-hidden bg-brand-offwhite flex items-center justify-center">
+        @if($decoration->safe_primary_image)
+            <img 
+                src="{{ $decoration->safe_primary_image }}" 
+                alt="Traditional Bihar {{ $decoration->name }} setup in {{ $decoration->location }}" 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                loading="lazy"
+            />
+        @else
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-cream via-brand-offwhite to-amber-50/50 p-4 text-center">
+                <div class="w-12 h-12 rounded-2xl bg-brand-burgundy/10 text-brand-burgundy flex items-center justify-center mb-1.5 border border-brand-gold/30 shadow-sm">
+                    <i class="fas fa-camera-retro text-lg text-brand-gold"></i>
+                </div>
+                <span class="text-xs font-serif font-bold text-brand-charcoal">{{ $decoration->name }}</span>
+                <span class="text-[10px] text-brand-muted-brown mt-0.5 tracking-wider uppercase font-semibold">Image Coming Soon</span>
+            </div>
+        @endif
         
         <!-- Category & Feature Badges -->
         <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap gap-1.5 items-center z-10">

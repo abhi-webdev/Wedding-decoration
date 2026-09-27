@@ -91,9 +91,15 @@
                         @foreach($videos as $v)
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="py-3 px-4">
-                                    <div class="w-14 h-20 rounded-lg overflow-hidden bg-stone-900 border border-slate-200 shrink-0 relative">
-                                        <img src="{{ $v->safe_thumbnail_url }}" alt="{{ $v->title }}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=200&q=80'">
-                                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center text-white">
+                                    <div class="w-14 h-20 rounded-lg overflow-hidden bg-stone-900 border border-slate-200 shrink-0 relative flex items-center justify-center">
+                                        @if($v->safe_thumbnail_url)
+                                            <img src="{{ $v->safe_thumbnail_url }}" alt="{{ $v->title }}" class="w-full h-full object-cover">
+                                        @else
+                                            <div class="p-1 text-center text-slate-400">
+                                                <svg class="w-6 h-6 mx-auto text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                            </div>
+                                        @endif
+                                        <div class="absolute inset-0 bg-black/20 flex items-center justify-center text-white">
                                             <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/></svg>
                                         </div>
                                     </div>

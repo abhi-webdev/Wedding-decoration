@@ -23,23 +23,24 @@ class AccountController extends Controller
         // Calculate real live stats for the authenticated customer only
         $totalBookings = Booking::where('user_id', $user->id)->count();
         $pendingBookings = Booking::where('user_id', $user->id)->where('status', 'pending')->count();
+        $acceptedBookings = Booking::where('user_id', $user->id)->where('status', 'accepted')->count();
         $confirmedBookings = Booking::where('user_id', $user->id)->whereIn('status', ['confirmed', 'advance_paid', 'scheduled'])->count();
         $completedBookings = Booking::where('user_id', $user->id)->where('status', 'completed')->count();
 
         $totalQuotations = Quotation::where('user_id', $user->id)->count();
         $pendingQuotations = Quotation::where('user_id', $user->id)->whereIn('status', ['sent', 'viewed'])->count();
-        $totalPaid = Payment::where('user_id', $user->id)->whereIn('status', ['paid', 'successful'])->sum('amount');
+        $totalPaid = Payment::where('user_id', $user->id)->whereIn('status', ['paid', 'accepted', 'successful'])->sum('amount');
 
         // Upcoming Event
-        $upcomingEvent = Booking::with('decoration')
+        $upcomingEvent = Booking::with(['decoration', 'package'])
             ->where('user_id', $user->id)
             ->where('event_date', '>=', now()->format('Y-m-d'))
-            ->whereIn('status', ['confirmed', 'advance_paid', 'scheduled'])
+            ->whereIn('status', ['accepted', 'confirmed', 'advance_paid', 'scheduled'])
             ->orderBy('event_date', 'asc')
             ->first();
 
         // Recent 5 bookings
-        $recentBookings = Booking::with(['decoration.category'])
+        $recentBookings = Booking::with(['decoration.category', 'package'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -51,6 +52,7 @@ class AccountController extends Controller
             'user',
             'totalBookings',
             'pendingBookings',
+            'acceptedBookings',
             'confirmedBookings',
             'completedBookings',
             'totalQuotations',

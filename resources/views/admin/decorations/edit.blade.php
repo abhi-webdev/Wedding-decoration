@@ -127,18 +127,36 @@
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                         <div class="flex items-center justify-between">
                             <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Current Image</span>
-                            <span class="text-[10px] text-slate-400 truncate max-w-[150px]">{{ basename($decoration->primary_image) }}</span>
+                            @if($decoration->safe_primary_image)
+                                <span class="text-[10px] text-slate-400 truncate max-w-[150px]">{{ basename($decoration->primary_image) }}</span>
+                            @endif
                         </div>
-                        <div class="h-40 rounded-lg overflow-hidden border border-slate-200 bg-white">
-                            <img src="{{ $decoration->safe_primary_image }}" alt="{{ $decoration->name }}" class="w-full h-full object-cover">
+                        <div class="h-44 rounded-lg overflow-hidden border border-slate-200 bg-white flex items-center justify-center">
+                            @if($decoration->safe_primary_image)
+                                <img src="{{ $decoration->safe_primary_image }}" alt="{{ $decoration->name }}" class="w-full h-full object-cover">
+                            @else
+                                <div class="text-center p-4 text-slate-400">
+                                    <svg class="w-8 h-8 mx-auto mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <p class="text-xs font-semibold">No Image Uploaded</p>
+                                    <p class="text-[10px]">Upload an image from your computer</p>
+                                </div>
+                            @endif
                         </div>
+                        @if($decoration->safe_primary_image)
+                            <div class="pt-1">
+                                <label class="inline-flex items-center gap-2 text-xs font-semibold text-red-600 hover:text-red-700 cursor-pointer">
+                                    <input type="checkbox" name="remove_image" value="1" class="rounded text-red-600 focus:ring-red-500">
+                                    <span>Remove current image</span>
+                                </label>
+                            </div>
+                        @endif
                     </div>
 
                     <!-- Replace Image Picker -->
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                         <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Upload New / Replace</span>
                         
-                        <div id="dropZone_primary" class="relative border-2 border-dashed border-slate-300 hover:border-amber-500 bg-white rounded-xl p-4 text-center transition cursor-pointer min-h-[160px] flex flex-col items-center justify-center">
+                        <div id="dropZone_primary" class="relative border-2 border-dashed border-slate-300 hover:border-amber-500 bg-white rounded-xl p-4 text-center transition cursor-pointer min-h-[176px] flex flex-col items-center justify-center">
                             <input type="file" name="image" id="primary_image_input" accept="image/jpeg,image/png,image/jpg,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                             
                             <div id="uploadPrompt_primary" class="space-y-1">
@@ -206,51 +224,49 @@
                 <h3 class="text-base font-bold text-slate-900">Decoration Gallery Images</h3>
                 <p class="text-xs text-slate-500">Upload additional angles, closeup floral shots, and client setup photos.</p>
             </div>
-            <span class="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-bold">{{ $decoration->images->count() }} Images</span>
+            <span class="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-bold">{{ $decoration->images->whereNotNull('safe_url')->count() }} Images</span>
         </div>
 
-        <!-- Extra Image Upload Form -->
+        <!-- Extra Image Upload Form (Single or Multiple) -->
         <form action="{{ route('admin.decorations.images.upload', $decoration->id) }}" method="POST" enctype="multipart/form-data" class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-4">
             @csrf
-            <div class="text-xs font-bold uppercase tracking-wider text-slate-700">Upload New Gallery Photo</div>
+            <div class="text-xs font-bold uppercase tracking-wider text-slate-700">Upload Gallery Photos</div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="md:col-span-2">
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Select Image File (JPG, PNG, WEBP, Max 5MB) *</label>
-                    <input type="file" name="gallery_image" id="gallery_image_input" accept="image/jpeg,image/png,image/jpg,image/webp" required
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Select Images (JPG, PNG, WEBP, Max 5MB each, Multiple allowed) *</label>
+                    <input type="file" name="gallery_images[]" id="gallery_images_input" accept="image/jpeg,image/png,image/jpg,image/webp" multiple required
                         class="w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1">Caption / Angle Description</label>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Caption / Angle Description (Optional)</label>
                     <input type="text" name="caption" placeholder="e.g. Side Angle, Mandap Floral Pillars"
                         class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-amber-500">
                 </div>
             </div>
 
             <!-- Preview for extra gallery upload -->
-            <div id="galleryPreviewBox" class="hidden items-center gap-3 p-2 bg-white rounded-lg border border-slate-200">
-                <img id="galleryPreviewImg" src="#" alt="Gallery Preview" class="w-12 h-12 object-cover rounded border border-slate-200">
-                <div class="text-xs">
-                    <p id="galleryPreviewName" class="font-bold text-slate-800"></p>
-                    <p id="galleryPreviewSize" class="text-slate-400 text-[10px]"></p>
-                </div>
+            <div id="galleryPreviewBox" class="hidden flex-wrap items-center gap-3 p-3 bg-white rounded-lg border border-slate-200">
             </div>
 
             <div class="flex justify-end">
                 <button type="submit" class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-lg text-xs shadow flex items-center gap-1.5">
                     <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                    <span>Upload to Gallery</span>
+                    <span>Upload Images to Gallery</span>
                 </button>
             </div>
         </form>
 
         <!-- Existing Gallery Images Grid -->
-        @if($decoration->images->count() > 0)
+        @php
+            $activeGalleryImages = $decoration->images->filter(fn($i) => !empty($i->safe_url));
+        @endphp
+        @if($activeGalleryImages->count() > 0)
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                @foreach($decoration->images as $img)
+                @foreach($activeGalleryImages as $img)
                     <div class="group relative bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow transition">
                         <div class="h-32 bg-slate-100 overflow-hidden">
-                            <img src="{{ str_starts_with($img->image_url, 'http') ? $img->image_url : asset($img->image_url) }}" alt="{{ $img->caption }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <img src="{{ $img->safe_url }}" alt="{{ $img->caption }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
                         </div>
                         <div class="p-2.5 flex items-center justify-between text-xs bg-white">
                             <span class="truncate text-[11px] text-slate-700 font-medium max-w-[110px]" title="{{ $img->caption }}">{{ $img->caption ?: 'Gallery Image' }}</span>
@@ -266,7 +282,11 @@
                 @endforeach
             </div>
         @else
-            <p class="text-xs text-slate-400 italic">No extra gallery images uploaded yet for this decoration.</p>
+            <div class="p-6 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400">
+                <svg class="w-8 h-8 mx-auto mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <p class="text-xs font-semibold">No Gallery Images Uploaded</p>
+                <p class="text-[10px]">Use the form above to upload multiple photos of this decoration setup.</p>
+            </div>
         @endif
     </div>
 </div>
@@ -317,31 +337,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Gallery Image Preview
-    const galleryInput = document.getElementById('gallery_image_input');
+    // Gallery Multi-Image Preview
+    const galleryInput = document.getElementById('gallery_images_input');
     const galleryBox = document.getElementById('galleryPreviewBox');
-    const galleryImg = document.getElementById('galleryPreviewImg');
-    const galleryName = document.getElementById('galleryPreviewName');
-    const gallerySize = document.getElementById('galleryPreviewSize');
 
-    if (galleryInput) {
+    if (galleryInput && galleryBox) {
         galleryInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                const file = this.files[0];
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Gallery image exceeds 5MB limit.');
-                    this.value = '';
-                    return;
-                }
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    galleryImg.src = e.target.result;
-                    galleryName.textContent = file.name;
-                    gallerySize.textContent = (file.size / 1024).toFixed(1) + ' KB';
-                    galleryBox.classList.remove('hidden');
-                    galleryBox.classList.add('flex');
-                };
-                reader.readAsDataURL(file);
+            galleryBox.innerHTML = '';
+            if (this.files && this.files.length > 0) {
+                galleryBox.classList.remove('hidden');
+                galleryBox.classList.add('flex');
+
+                Array.from(this.files).forEach((file, index) => {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert(`File "${file.name}" exceeds 5MB limit.`);
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const item = document.createElement('div');
+                        item.className = 'flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs';
+                        item.innerHTML = `
+                            <img src="${e.target.result}" class="w-10 h-10 object-cover rounded border border-slate-200" alt="Preview">
+                            <div class="truncate max-w-[120px]">
+                                <p class="font-bold text-slate-800 text-[11px] truncate">${file.name}</p>
+                                <p class="text-slate-400 text-[10px]">${(file.size / 1024).toFixed(1)} KB</p>
+                            </div>
+                        `;
+                        galleryBox.appendChild(item);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                galleryBox.classList.add('hidden');
+                galleryBox.classList.remove('flex');
             }
         });
     }

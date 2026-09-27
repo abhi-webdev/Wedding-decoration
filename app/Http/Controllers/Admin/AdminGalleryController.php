@@ -68,22 +68,63 @@ class AdminGalleryController extends Controller
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         $catId = $validated['gallery_category_id'] ?? $validated['category_id'] ?? 1;
         $galCat = GalleryCategory::find($catId);
         $categoryName = $galCat ? $galCat->name : ($validated['event_type'] ?? 'Wedding');
-        $imagePath = 'images/decorations/jaimala-stage-01.jpg';
+        
+        $destPath = public_path('uploads/gallery');
+        if (!file_exists($destPath)) {
+            mkdir($destPath, 0755, true);
+        }
 
-        if ($request->hasFile('image') && $request->file('image')->isValid()) {
-            $file = $request->file('image');
-            $fileName = 'gal_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
-            $destPath = public_path('uploads/gallery');
-            if (!file_exists($destPath)) {
-                mkdir($destPath, 0755, true);
+        $files = [];
+        if ($request->hasFile('images')) {
+            $files = $request->file('images');
+        } elseif ($request->hasFile('image')) {
+            $files = [$request->file('image')];
+        }
+
+        if (!empty($files)) {
+            $count = 0;
+            foreach ($files as $index => $file) {
+                if ($file && $file->isValid()) {
+                    $fileName = 'gal_' . time() . '_' . Str::random(8) . '.' . $file->getClientOriginalExtension();
+                    $file->move($destPath, $fileName);
+                    $imagePath = 'uploads/gallery/' . $fileName;
+
+                    $itemTitle = count($files) > 1 ? ($validated['title'] . ' ' . ($index + 1)) : $validated['title'];
+
+                    $item = GalleryItem::create([
+                        'gallery_category_id' => $catId,
+                        'category' => $categoryName,
+                        'title' => $itemTitle,
+                        'slug' => Str::slug($itemTitle) . '-' . time() . '-' . Str::random(4),
+                        'image' => $imagePath,
+                        'image_url' => $imagePath,
+                        'caption' => $validated['caption'] ?? null,
+                        'description' => $validated['description'] ?? null,
+                        'location' => $validated['location'] ?? 'Patna, Bihar',
+                        'event_type' => $validated['event_type'] ?? 'Wedding',
+                        'is_featured' => $request->boolean('is_featured', false),
+                        'is_active' => $request->boolean('is_active', true),
+                        'display_order' => ($validated['sort_order'] ?? 0) + $index,
+                        'sort_order' => ($validated['sort_order'] ?? 0) + $index,
+                    ]);
+                    $count++;
+                }
             }
-            $file->move($destPath, $fileName);
-            $imagePath = 'uploads/gallery/' . $fileName;
+
+            AdminActivityLog::log(
+                'Added Gallery Photos',
+                'GalleryItem',
+                null,
+                "Added {$count} gallery photograph(s)"
+            );
+
+            return redirect()->route('admin.gallery.index')->with('success', "{$count} gallery photo(s) added successfully.");
         }
 
         $item = GalleryItem::create([
@@ -91,8 +132,8 @@ class AdminGalleryController extends Controller
             'category' => $categoryName,
             'title' => $validated['title'],
             'slug' => Str::slug($validated['title']) . '-' . time(),
-            'image' => $imagePath,
-            'image_url' => $imagePath,
+            'image' => null,
+            'image_url' => null,
             'caption' => $validated['caption'] ?? null,
             'description' => $validated['description'] ?? null,
             'location' => $validated['location'] ?? 'Patna, Bihar',
@@ -110,7 +151,7 @@ class AdminGalleryController extends Controller
             "Added gallery photograph '{$item->title}'"
         );
 
-        return redirect()->route('admin.gallery.index')->with('success', "Gallery photo '{$item->title}' added successfully.");
+        return redirect()->route('admin.gallery.index')->with('success', "Gallery item '{$item->title}' added successfully.");
     }
 
     public function show($id)
@@ -141,12 +182,21 @@ class AdminGalleryController extends Controller
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
 
         $catId = $validated['gallery_category_id'] ?? $validated['category_id'] ?? $item->gallery_category_id;
         $galCat = GalleryCategory::find($catId);
         $categoryName = $galCat ? $galCat->name : ($validated['event_type'] ?? $item->category ?? 'Wedding');
         $imagePath = $item->image ?: $item->image_url;
+
+        // Handle explicit image removal
+        if ($request->boolean('remove_image')) {
+            if ($item->image && str_starts_with($item->image, 'uploads/gallery/') && file_exists(public_path($item->image))) {
+                @unlink(public_path($item->image));
+            }
+            $imagePath = null;
+        }
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');

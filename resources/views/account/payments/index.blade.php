@@ -78,10 +78,10 @@
                                 </td>
                                 <td class="py-4 px-6">
                                     <div class="font-semibold text-stone-800 text-xs">
-                                        {{ $payment->booking ? $payment->booking->booking_reference : 'N/A' }}
+                                        {{ $payment->booking ? $payment->booking->booking_reference : 'Direct Payment' }}
                                     </div>
-                                    <div class="text-[11px] text-stone-500">
-                                        {{ $payment->booking && $payment->booking->decoration ? $payment->booking->decoration->name : 'Wedding Decoration' }}
+                                    <div class="text-[11px] text-stone-500 font-medium">
+                                        {{ $payment->booking ? $payment->booking->booked_item_name : 'Aditya Utsav Wedding Service' }}
                                     </div>
                                 </td>
                                 <td class="py-4 px-6 text-xs text-stone-600">
@@ -100,27 +100,36 @@
                                 </td>
                                 <td class="py-4 px-6">
                                     @if($payment->status === 'successful')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                            ✓ Verified
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            ✓ Verified & Paid
                                         </span>
                                     @elseif($payment->status === 'pending')
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                            Under Verification
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                                            Pending Verification
                                         </span>
+                                    @elseif($payment->status === 'rejected')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200" title="{{ $payment->rejection_reason }}">
+                                            ✕ Verification Rejected
+                                        </span>
+                                        @if($payment->rejection_reason)
+                                            <div class="text-[10px] text-red-600 mt-1 max-w-xs">{{ $payment->rejection_reason }}</div>
+                                        @endif
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-800 border border-red-200">
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-stone-100 text-stone-800 border border-stone-200">
                                             {{ ucfirst($payment->status) }}
                                         </span>
                                     @endif
                                 </td>
                                 <td class="py-4 px-6 text-right">
-                                    @if($payment->invoice)
-                                        <a href="{{ route('account.invoices.show', $payment->invoice) }}" class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 underline">
-                                            <span>View Invoice</span>
-                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                                    @if($payment->status === 'successful')
+                                        <a href="{{ route('account.payments.receipt', $payment) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-lg text-xs font-semibold transition">
+                                            <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                            <span>Receipt</span>
                                         </a>
+                                    @elseif($payment->status === 'pending')
+                                        <span class="text-xs text-stone-400 italic">Under Review</span>
                                     @else
-                                        <span class="text-xs text-stone-400">Recorded</span>
+                                        <span class="text-xs text-stone-400">—</span>
                                     @endif
                                 </td>
                             </tr>

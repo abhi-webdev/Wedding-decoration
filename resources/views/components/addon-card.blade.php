@@ -2,14 +2,19 @@
 
 <div class="bg-white rounded-xl p-4 border border-brand-light-border shadow-soft-luxury hover:border-brand-gold/60 transition-all flex flex-col sm:flex-row items-start sm:items-center gap-4">
     <!-- Addon Thumbnail Image -->
-    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border">
-        <img 
-            src="{{ $addon->safe_image }}" 
-            alt="{{ $addon->name }}" 
-            class="w-full h-full object-cover"
-            loading="lazy"
-            onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-        />
+    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border flex items-center justify-center">
+        @if($addon->safe_image)
+            <img 
+                src="{{ $addon->safe_image }}" 
+                alt="{{ $addon->name }}" 
+                class="w-full h-full object-cover"
+                loading="lazy"
+            />
+        @else
+            <div class="p-2 text-center text-brand-muted-brown">
+                <i class="fas fa-sparkles text-brand-gold text-base"></i>
+            </div>
+        @endif
     </div>
 
     <!-- Details -->

@@ -87,36 +87,50 @@ class WeddingVideo extends Model
         return $query->where('is_active', true)->where('is_featured', true);
     }
 
-    public function getSafeVideoUrlAttribute(): string
+    public function getSafeVideoUrlAttribute(): ?string
     {
         if (empty($this->video_path)) {
-            // Default elegant HTML5 demo video
-            return 'https://assets.mixkit.co/videos/preview/mixkit-traditional-wedding-ceremony-under-a-canopy-48866-large.mp4';
+            return null;
         }
         if (str_starts_with($this->video_path, 'http://') || str_starts_with($this->video_path, 'https://')) {
-            return $this->video_path;
+            return null;
         }
-        return asset($this->video_path);
+        if (file_exists(public_path($this->video_path))) {
+            return asset($this->video_path);
+        }
+        if (file_exists(public_path('storage/' . $this->video_path))) {
+            return asset('storage/' . $this->video_path);
+        }
+        if (str_starts_with($this->video_path, 'uploads/')) {
+            return asset($this->video_path);
+        }
+        if (str_starts_with($this->video_path, 'storage/')) {
+            return asset($this->video_path);
+        }
+        return null;
     }
 
-    public function getSafeThumbnailUrlAttribute(): string
+    public function getSafeThumbnailUrlAttribute(): ?string
     {
         if (empty($this->thumbnail_path)) {
-            // Fallback authentic Indian wedding thumbnails
-            return match ($this->event_type) {
-                'jaimala' => 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
-                'mandap' => 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=600&q=80',
-                'haldi' => 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
-                'mehendi' => 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?auto=format&fit=crop&w=600&q=80',
-                'sangeet' => 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-                'reception' => 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=600&q=80',
-                default => 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
-            };
+            return null;
         }
         if (str_starts_with($this->thumbnail_path, 'http://') || str_starts_with($this->thumbnail_path, 'https://')) {
-            return $this->thumbnail_path;
+            return null;
         }
-        return asset($this->thumbnail_path);
+        if (file_exists(public_path($this->thumbnail_path))) {
+            return asset($this->thumbnail_path);
+        }
+        if (file_exists(public_path('storage/' . $this->thumbnail_path))) {
+            return asset('storage/' . $this->thumbnail_path);
+        }
+        if (str_starts_with($this->thumbnail_path, 'uploads/')) {
+            return asset($this->thumbnail_path);
+        }
+        if (str_starts_with($this->thumbnail_path, 'storage/')) {
+            return asset($this->thumbnail_path);
+        }
+        return null;
     }
 
     public function getEventTypeLabelAttribute(): string

@@ -9,15 +9,19 @@
 <!-- 1. OPTIMIZED HERO SECTION & COMPACT AVAILABILITY CHECKER -->
 <!-- ======================================================= -->
 <section class="relative bg-brand-deep-burgundy text-white overflow-hidden scroll-reveal">
-    <!-- Authentic Indian Wedding Stage Background with Overlay -->
+    @php
+        $heroBanner = \App\Models\SiteSetting::getSafeImage('hero_banner');
+    @endphp
+    <!-- Stage Background with Overlay -->
     <div class="absolute inset-0 z-0">
-        <img 
-            src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=2000&q=85" 
-            alt="Traditional Bihar wedding Jaimala stage and floral mandap decoration by Aditya Utsav" 
-            class="w-full h-full object-cover object-center opacity-25 scale-105 transform duration-10000"
-            loading="eager"
-            onerror="this.src='https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=2000&q=85'"
-        />
+        @if($heroBanner)
+            <img 
+                src="{{ $heroBanner }}" 
+                alt="Bihar wedding Jaimala stage and floral mandap decoration by Aditya Utsav" 
+                class="w-full h-full object-cover object-center opacity-25 scale-105 transform duration-10000"
+                loading="eager"
+            />
+        @endif
         <!-- Multi-layer gradient overlays to maintain deep burgundy luxury feel -->
         <div class="absolute inset-0 bg-gradient-to-r from-brand-deep-burgundy via-brand-burgundy/90 to-brand-deep-burgundy/80"></div>
         <div class="absolute inset-0 bg-gradient-to-t from-brand-deep-burgundy via-transparent to-black/40"></div>
@@ -90,20 +94,20 @@
                     </div>
 
                     <!-- Quick Availability Checker Form -->
-                    <form id="hero-checker-form" class="space-y-2.5 sm:space-y-3">
+                    <form id="hero-checker-form" method="GET" action="{{ route('booking.availability') }}" class="space-y-2.5 sm:space-y-3">
                         <div>
                             <label for="hero_event_type" class="block text-[11px] sm:text-xs font-semibold text-brand-charcoal mb-1">
                                 Ceremony / Event Type
                             </label>
                             <div class="relative">
                                 <select id="hero_event_type" name="event_type" class="w-full min-w-0 max-w-full px-3 py-2 text-xs sm:text-sm bg-brand-offwhite border border-brand-light-border rounded-lg text-brand-charcoal focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy appearance-none">
-                                    <option value="Jaimala">Jaimala / Varmala Stage</option>
-                                    <option value="Wedding & Vivah">Vedic Vivah Mandap</option>
-                                    <option value="Haldi">Haldi Ceremony Decoration</option>
-                                    <option value="Mehendi">Mehendi Courtyard Setup</option>
-                                    <option value="Sangeet">Sangeet Night Stage &amp; Lighting</option>
+                                    <option value="Wedding & Vivah">Wedding &amp; Vedic Vivah Mandap</option>
+                                    <option value="Jaimala / Varmala">Jaimala / Varmala Stage</option>
+                                    <option value="Haldi Ceremony">Haldi Ceremony Setup</option>
+                                    <option value="Mehendi Ceremony">Mehendi Courtyard Setup</option>
+                                    <option value="Sangeet Night">Sangeet Night Stage &amp; Lighting</option>
                                     <option value="Reception">Grand Wedding Reception</option>
-                                    <option value="Complete Package">Complete Shubh Vivah Package</option>
+                                    <option value="Complete Wedding Package">Complete Shubh Vivah Package</option>
                                 </select>
                                 <i class="fas fa-chevron-down absolute right-3 top-3 text-[10px] text-gray-400 pointer-events-none"></i>
                             </div>
@@ -138,13 +142,14 @@
                                 id="hero_event_date" 
                                 name="event_date" 
                                 min="{{ date('Y-m-d') }}" 
+                                value="{{ date('Y-m-d', strtotime('+14 days')) }}"
                                 required 
                                 class="w-full min-w-0 max-w-full px-3 py-2 text-xs sm:text-sm bg-brand-offwhite border border-brand-light-border rounded-lg text-brand-charcoal focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy"
                             />
                         </div>
 
                         <div class="pt-1">
-                            <button type="submit" class="w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-lg border border-brand-gold shadow-md hover:shadow-gold-glow transition-all duration-200">
+                            <button type="submit" class="w-full py-2.5 px-4 text-xs font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-lg border border-brand-gold shadow-md hover:shadow-gold-glow transition-all duration-200 cursor-pointer">
                                 <i class="fas fa-calendar-check mr-1.5 text-brand-gold"></i>
                                 Check Availability Now
                             </button>
@@ -369,14 +374,20 @@
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-4">
             @foreach($galleryItems->take(6) as $item)
-                <a href="{{ route('gallery.index') }}" class="group relative block aspect-square rounded-xl overflow-hidden bg-brand-offwhite shadow-sm hover:shadow-card-hover transition-all">
-                    <img 
-                        src="{{ $item->safe_image_url }}" 
-                        alt="{{ $item->title }} - Bihar Wedding Decoration by Aditya Utsav" 
-                        class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        loading="lazy"
-                        onerror="this.src='https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'"
-                    />
+                <a href="{{ route('gallery.index') }}" class="group relative block aspect-square rounded-xl overflow-hidden bg-brand-offwhite shadow-sm hover:shadow-card-hover transition-all flex items-center justify-center">
+                    @if($item->display_image)
+                        <img 
+                            src="{{ $item->display_image }}" 
+                            alt="{{ $item->title }} - Bihar Wedding Decoration by Aditya Utsav" 
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            loading="lazy"
+                        />
+                    @else
+                        <div class="p-3 text-center text-brand-muted-brown flex flex-col items-center justify-center">
+                            <i class="fas fa-camera text-brand-gold text-lg mb-1"></i>
+                            <span class="text-[9px] font-semibold uppercase tracking-wider">{{ $item->title }}</span>
+                        </div>
+                    @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 sm:p-2.5">
                         <span class="text-white text-[10px] sm:text-[11px] font-semibold truncate">{{ $item->title }}</span>
                     </div>

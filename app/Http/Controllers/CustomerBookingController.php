@@ -19,7 +19,7 @@ class CustomerBookingController extends Controller
         $userId = Auth::id();
 
         // Enforce customer ownership query FIRST
-        $query = Booking::with(['decoration.category', 'addons.addon'])
+        $query = Booking::with(['decoration.category', 'package', 'addons.addon', 'payments'])
             ->where('user_id', $userId);
 
         // 1. Status Filter
@@ -32,7 +32,7 @@ class CustomerBookingController extends Controller
             }
         }
 
-        // 2. Search Query (Reference, Decoration Name, Event Type, City)
+        // 2. Search Query (Reference, Decoration/Package Name, Event Type, City)
         $searchQuery = trim($request->input('search', ''));
         if (!empty($searchQuery)) {
             $query->where(function ($q) use ($searchQuery) {
@@ -41,6 +41,9 @@ class CustomerBookingController extends Controller
                   ->orWhere('city', 'like', "%{$searchQuery}%")
                   ->orWhereHas('decoration', function ($decQ) use ($searchQuery) {
                       $decQ->where('name', 'like', "%{$searchQuery}%");
+                  })
+                  ->orWhereHas('package', function ($pkgQ) use ($searchQuery) {
+                      $pkgQ->where('name', 'like', "%{$searchQuery}%");
                   });
             });
         }
@@ -70,9 +73,10 @@ class CustomerBookingController extends Controller
         $counts = [
             'all' => Booking::where('user_id', $userId)->count(),
             'pending' => Booking::where('user_id', $userId)->where('status', 'pending')->count(),
+            'accepted' => Booking::where('user_id', $userId)->where('status', 'accepted')->count(),
             'confirmed' => Booking::where('user_id', $userId)->whereIn('status', ['confirmed', 'advance_paid', 'scheduled'])->count(),
             'completed' => Booking::where('user_id', $userId)->where('status', 'completed')->count(),
-            'cancelled' => Booking::where('user_id', $userId)->where('status', 'cancelled')->count(),
+            'cancelled' => Booking::where('user_id', $userId)->whereIn('status', ['cancelled', 'rejected'])->count(),
         ];
 
         return view('account.bookings.index', compact(
@@ -94,10 +98,13 @@ class CustomerBookingController extends Controller
         $booking = Booking::with([
             'decoration.category',
             'decoration.images',
+            'package',
             'addons.addon',
             'statusHistories',
             'cancellationRequests',
-            'rescheduleRequests'
+            'rescheduleRequests',
+            'payments.verifiedByUser',
+            'quotations'
         ])
         ->where('user_id', $userId)
         ->where(function ($q) use ($bookingIdentifier) {

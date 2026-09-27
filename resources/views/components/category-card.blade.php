@@ -2,14 +2,22 @@
 
 <div class="group relative bg-white rounded-xl overflow-hidden border border-brand-light-border shadow-soft-luxury hover:shadow-card-hover transition-all duration-300 flex flex-col h-full">
     <!-- Category Image Container -->
-    <div class="relative h-48 sm:h-64 overflow-hidden bg-brand-offwhite">
-        <img 
-            src="{{ $category->safe_image }}" 
-            alt="Traditional Bihar {{ $category->name }} ceremony decoration by Aditya Utsav" 
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-            loading="lazy"
-            onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-        />
+    <div class="relative h-48 sm:h-64 overflow-hidden bg-brand-offwhite flex items-center justify-center">
+        @if($category->safe_image)
+            <img 
+                src="{{ $category->safe_image }}" 
+                alt="Traditional Bihar {{ $category->name }} ceremony decoration by Aditya Utsav" 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                loading="lazy"
+            />
+        @else
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-deep-burgundy via-brand-burgundy to-brand-royal-rose p-6 text-center text-white">
+                <div class="w-14 h-14 rounded-2xl bg-brand-gold/20 text-brand-gold flex items-center justify-center mb-2 border border-brand-gold/40 shadow-sm">
+                    <i class="fas fa-sparkles text-xl"></i>
+                </div>
+                <span class="text-xs text-brand-gold-light uppercase tracking-wider font-semibold">Aditya Utsav Bihar</span>
+            </div>
+        @endif
         <!-- Gradient Overlay -->
         <div class="absolute inset-0 bg-gradient-to-t from-brand-charcoal/85 via-brand-charcoal/30 to-transparent"></div>
 

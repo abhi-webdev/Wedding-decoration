@@ -9,7 +9,7 @@
     <div>
         <div class="flex items-center justify-between mb-3">
             <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Financial & Revenue Metrics</h2>
-            <span class="text-xs text-slate-400">Live Business Calculations</span>
+            <span class="text-xs text-slate-400">Live Database Calculations</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- Total Booking Pipeline Value -->
@@ -18,7 +18,7 @@
                     <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Booking Value</p>
                     <h3 class="text-2xl font-bold text-slate-900 mt-1">₹{{ number_format($counts['total_booking_value'], 2) }}</h3>
                     <p class="text-[11px] text-slate-500 mt-1">
-                        Across {{ $counts['total_bookings'] }} active booking requests
+                        Across {{ $counts['total_bookings'] }} total booking request(s)
                     </p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
@@ -26,31 +26,31 @@
                 </div>
             </div>
 
-            <!-- Total Quoted Value -->
+            <!-- Total Verified Payments -->
             <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quoted Amount</p>
-                    <h3 class="text-2xl font-bold text-amber-700 mt-1">₹{{ number_format($counts['total_quoted_value'], 2) }}</h3>
-                    <p class="text-[11px] text-amber-600 mt-1">
-                        {{ $counts['total_quotations'] }} Formal Quotation(s) Issued
-                    </p>
-                </div>
-                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                </div>
-            </div>
-
-            <!-- Advance Received -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Advance Received</p>
-                    <h3 class="text-2xl font-bold text-emerald-600 mt-1">₹{{ number_format($counts['advance_received'], 2) }}</h3>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Verified Payments</p>
+                    <h3 class="text-2xl font-bold text-emerald-600 mt-1">₹{{ number_format($counts['total_verified_payments'], 2) }}</h3>
                     <p class="text-[11px] text-emerald-600 font-medium mt-1">
-                        {{ $counts['total_payments'] }} Verified transaction(s)
+                        {{ $counts['total_payments'] }} Recorded transaction(s)
                     </p>
                 </div>
                 <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+
+            <!-- Pending Payment Verification -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Verification</p>
+                    <h3 class="text-2xl font-bold text-amber-700 mt-1">₹{{ number_format($counts['pending_payment_amount'], 2) }}</h3>
+                    <p class="text-[11px] text-amber-600 mt-1">
+                        {{ $counts['pending_payment_requests'] }} Request(s) awaiting admin review
+                    </p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                 </div>
             </div>
 
@@ -78,40 +78,70 @@
             <span class="text-[10px] text-amber-600 font-semibold mt-0.5">{{ $counts['pending_bookings'] }} pending review</span>
         </a>
 
+        <a href="{{ route('admin.bookings.index', ['status' => 'accepted']) }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
+            <span class="text-xs text-slate-500 font-medium">Accepted</span>
+            <p class="text-xl font-bold text-blue-600 mt-1">{{ number_format($counts['accepted_bookings']) }}</p>
+            <span class="text-[10px] text-blue-600 font-semibold mt-0.5">Ready for payment</span>
+        </a>
+
         <a href="{{ route('admin.calendar.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
-            <span class="text-xs text-slate-500 font-medium">Confirmed Events</span>
-            <p class="text-xl font-bold text-emerald-600 mt-1">{{ number_format($counts['confirmed_bookings']) }}</p>
+            <span class="text-xs text-slate-500 font-medium">Upcoming Events</span>
+            <p class="text-xl font-bold text-emerald-600 mt-1">{{ number_format($counts['upcoming_events']) }}</p>
             <span class="text-[10px] text-emerald-700 font-semibold mt-0.5">On Event Calendar</span>
         </a>
 
-        <a href="{{ route('admin.quotations.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
-            <span class="text-xs text-slate-500 font-medium">Quotations</span>
-            <p class="text-xl font-bold text-slate-900 mt-1">{{ number_format($counts['total_quotations']) }}</p>
-            <span class="text-[10px] text-blue-600 font-semibold mt-0.5">Manage Quotes</span>
+        <a href="{{ route('admin.payments.requests') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
+            <span class="text-xs text-slate-500 font-medium">Payment Requests</span>
+            <p class="text-xl font-bold text-amber-600 mt-1">{{ number_format($counts['pending_payment_requests']) }}</p>
+            <span class="text-[10px] text-amber-700 font-semibold mt-0.5">Verification Needed</span>
         </a>
 
         <a href="{{ route('admin.payments.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
-            <span class="text-xs text-slate-500 font-medium">Payments</span>
+            <span class="text-xs text-slate-500 font-medium">Payment History</span>
             <p class="text-xl font-bold text-slate-900 mt-1">{{ number_format($counts['total_payments']) }}</p>
             <span class="text-[10px] text-emerald-600 font-semibold mt-0.5">Deposit Records</span>
         </a>
 
-        <a href="{{ route('admin.invoices.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
-            <span class="text-xs text-slate-500 font-medium">Tax Invoices</span>
-            <p class="text-xl font-bold text-slate-900 mt-1">{{ number_format($counts['total_invoices']) }}</p>
-            <span class="text-[10px] text-purple-600 font-semibold mt-0.5">Printable Bills</span>
-        </a>
-
         <a href="{{ route('admin.customers.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-amber-400 transition flex flex-col items-center text-center">
-            <span class="text-xs text-slate-500 font-medium">Registered Clients</span>
+            <span class="text-xs text-slate-500 font-medium">Clients</span>
             <p class="text-xl font-bold text-slate-900 mt-1">{{ number_format($counts['total_customers']) }}</p>
             <span class="text-[10px] text-slate-400 font-semibold mt-0.5">Customer Base</span>
         </a>
     </div>
 
     <!-- Urgent Action Banners (if any pending requests) -->
-    @if($counts['pending_reschedules'] > 0 || $counts['pending_cancellations'] > 0 || $counts['pending_quotes'] > 0)
+    @if($counts['pending_payment_requests'] > 0 || $counts['pending_bookings'] > 0 || $counts['pending_reschedules'] > 0 || $counts['pending_cancellations'] > 0)
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            @if($counts['pending_payment_requests'] > 0)
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-emerald-100 text-emerald-700 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-emerald-900">{{ $counts['pending_payment_requests'] }} Payment Request(s)</p>
+                            <p class="text-xs text-emerald-700">₹{{ number_format($counts['pending_payment_amount']) }} awaiting verification</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.payments.requests') }}" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold">Verify Now</a>
+                </div>
+            @endif
+
+            @if($counts['pending_bookings'] > 0)
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-amber-100 text-amber-700 rounded-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-amber-900">{{ $counts['pending_bookings'] }} Pending Booking(s)</p>
+                            <p class="text-xs text-amber-700">New customer bookings awaiting review</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin.bookings.index', ['status' => 'pending']) }}" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Review</a>
+                </div>
+            @endif
+
             @if($counts['pending_reschedules'] > 0)
                 <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -124,36 +154,6 @@
                         </div>
                     </div>
                     <a href="{{ route('admin.reschedule-requests.index') }}" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold">Review</a>
-                </div>
-            @endif
-
-            @if($counts['pending_cancellations'] > 0)
-                <div class="bg-red-50 border border-red-200 p-4 rounded-xl flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-red-100 text-red-700 rounded-lg">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-red-900">{{ $counts['pending_cancellations'] }} Cancellation Request(s)</p>
-                            <p class="text-xs text-red-700">Customers requesting cancellations</p>
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.cancellation-requests.index') }}" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold">Review</a>
-                </div>
-            @endif
-
-            @if($counts['pending_quotes'] > 0)
-                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-amber-100 text-amber-700 rounded-lg">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-bold text-amber-900">{{ $counts['pending_quotes'] }} Custom Quote Request(s)</p>
-                            <p class="text-xs text-amber-700">Custom inquiries awaiting estimation</p>
-                        </div>
-                    </div>
-                    <a href="{{ route('admin.quotes.index') }}" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs font-semibold">Review</a>
                 </div>
             @endif
         </div>
@@ -178,10 +178,11 @@
                         <thead class="bg-slate-50/80 text-slate-500 uppercase font-semibold border-b border-slate-100 text-[11px]">
                             <tr>
                                 <th class="py-3 px-4">Ref / Customer</th>
-                                <th class="py-3 px-4">Decoration</th>
+                                <th class="py-3 px-4">Decoration / Package</th>
                                 <th class="py-3 px-4">Event Date</th>
-                                <th class="py-3 px-4">Booking Total</th>
-                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4">Total Amount</th>
+                                <th class="py-3 px-4">Booking Status</th>
+                                <th class="py-3 px-4">Payment</th>
                                 <th class="py-3 px-4 text-right">Action</th>
                             </tr>
                         </thead>
@@ -189,30 +190,37 @@
                             @forelse($recentBookings as $b)
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="py-3 px-4">
-                                        <span class="font-bold text-slate-900 block">#{{ $b->booking_reference }}</span>
+                                        <span class="font-bold text-slate-900 block font-mono">#{{ $b->booking_reference }}</span>
                                         <span class="text-[11px] text-slate-500">{{ $b->customer_name }}</span>
                                     </td>
-                                    <td class="py-3 px-4 font-medium text-slate-800 truncate max-w-[150px]">
-                                        {{ $b->decoration ? $b->decoration->name : 'Custom Decoration' }}
+                                    <td class="py-3 px-4 font-medium text-slate-800 max-w-[170px]">
+                                        <span class="truncate block font-semibold text-slate-900">{{ $b->booked_item_name }}</span>
+                                        <span class="text-[10px] text-slate-400 uppercase font-bold">{{ $b->booked_item_type_label }}</span>
                                     </td>
                                     <td class="py-3 px-4 whitespace-nowrap">
                                         <span class="font-semibold text-slate-700 block">{{ \Carbon\Carbon::parse($b->event_date)->format('d M Y') }}</span>
-                                        <span class="text-[10px] text-slate-400">{{ $b->event_city ?? 'Bihar' }}</span>
+                                        <span class="text-[10px] text-slate-400">{{ $b->event_city ?? $b->city ?? 'Bihar' }}</span>
                                     </td>
-                                    <td class="py-3 px-4 font-bold text-slate-900">
-                                        ₹{{ number_format($b->total_price) }}
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <span class="font-bold text-slate-900 block">₹{{ number_format($b->effective_total) }}</span>
+                                        <span class="text-[10px] text-slate-400">Paid: ₹{{ number_format($b->total_paid) }}</span>
                                     </td>
                                     <td class="py-3 px-4 whitespace-nowrap">
                                         <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase
                                             {{ in_array($b->status, ['confirmed', 'advance_paid', 'scheduled']) ? 'bg-emerald-100 text-emerald-800' :
-                                               ($b->status === 'quoted' ? 'bg-blue-100 text-blue-800' :
+                                               ($b->status === 'accepted' ? 'bg-blue-100 text-blue-800' :
                                                ($b->status === 'pending' ? 'bg-amber-100 text-amber-800' :
                                                ($b->status === 'completed' ? 'bg-teal-100 text-teal-800' :
                                                ($b->status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-800')))) }}">
                                             {{ str_replace('_', ' ', $b->status) }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 text-right">
+                                    <td class="py-3 px-4 whitespace-nowrap">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $b->payment_status_badge_classes }}">
+                                            {{ $b->payment_status_label }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 text-right whitespace-nowrap">
                                         <a href="{{ route('admin.bookings.show', $b->id) }}" class="inline-block px-2.5 py-1 rounded bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-slate-700 font-semibold transition">
                                             View
                                         </a>
@@ -220,7 +228,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-slate-400">No booking requests found.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-400">No booking requests found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -258,11 +266,11 @@
                     </div>
                 </div>
 
-                <!-- Recent Payments -->
+                <!-- Recent Payments / Payment Requests -->
                 <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between">
                     <div>
                         <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-                            <h3 class="font-bold text-slate-900 text-sm">Recent Receipts</h3>
+                            <h3 class="font-bold text-slate-900 text-sm">Recent Payments</h3>
                             <a href="{{ route('admin.payments.index') }}" class="text-xs text-emerald-700 font-semibold">View All &rarr;</a>
                         </div>
                         <div class="space-y-2.5 text-xs">
@@ -270,12 +278,12 @@
                                 <div class="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
                                     <div>
                                         <span class="font-mono font-bold text-slate-800 block">{{ $p->payment_reference }}</span>
-                                        <span class="text-[11px] text-slate-500">{{ $p->customer ? $p->customer->name : 'Customer' }} ({{ $p->payment_method_label }})</span>
+                                        <span class="text-[11px] text-slate-500">{{ $p->customer ? $p->customer->name : ($p->booking ? $p->booking->customer_name : 'Customer') }} ({{ $p->payment_method_label }})</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="font-bold text-emerald-700 block">{{ $p->formatted_amount }}</span>
-                                        <span class="text-[10px] font-semibold uppercase px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
-                                            {{ $p->status }}
+                                        <span class="text-[10px] font-semibold uppercase px-1.5 py-0.2 rounded {{ $p->status === 'pending' ? 'bg-amber-100 text-amber-800' : (in_array($p->status, ['paid', 'accepted', 'successful']) ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800') }}">
+                                            {{ $p->status === 'pending' ? 'Pending Verification' : $p->status }}
                                         </span>
                                     </div>
                                 </div>

@@ -2,13 +2,22 @@
 
 <div class="group bg-white rounded-2xl border border-brand-light-border overflow-hidden shadow-soft-luxury hover:shadow-2xl hover:border-brand-gold transition-all duration-300 flex flex-col h-full">
     <!-- Header visual / Discount Banner -->
-    <div class="relative aspect-[16/9] overflow-hidden bg-brand-burgundy/10">
-        <img 
-            src="{{ $offer->display_image }}" 
-            alt="{{ $offer->title }}" 
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
-        />
+    <div class="relative aspect-[16/9] overflow-hidden bg-brand-burgundy/10 flex items-center justify-center">
+        @if($offer->display_image)
+            <img 
+                src="{{ $offer->display_image }}" 
+                alt="{{ $offer->title }}" 
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                loading="lazy"
+            />
+        @else
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-deep-burgundy via-brand-burgundy to-brand-royal-rose p-6 text-center text-white">
+                <div class="w-12 h-12 rounded-2xl bg-brand-gold/20 text-brand-gold flex items-center justify-center mb-1 border border-brand-gold/40 shadow-sm">
+                    <i class="fas fa-tag text-lg"></i>
+                </div>
+                <span class="text-xs font-serif font-bold text-brand-gold-light">Special Vivah Offer</span>
+            </div>
+        @endif
         <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent"></div>
 
         <!-- Highlight Badge -->

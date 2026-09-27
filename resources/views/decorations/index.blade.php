@@ -15,12 +15,6 @@
 
 @section('content')
 
-<!-- 1. Breadcrumbs Navigation -->
-<x-breadcrumb :items="array_filter([
-    ['label' => 'Decorations', 'url' => route('decorations.index')],
-    $selectedCategory ? ['label' => $selectedCategory->name, 'url' => ''] : null,
-])" />
-
 <!-- 2. Page Header Banner -->
 <section class="bg-gradient-to-b from-brand-deep-burgundy to-brand-burgundy text-white py-12 sm:py-16 border-b border-brand-gold relative overflow-hidden">
     <!-- Subtle Gold Pattern Background -->
@@ -68,14 +62,17 @@
                     href="{{ route('decorations.category', $cat->slug) }}" 
                     class="group relative rounded-xl overflow-hidden bg-white border {{ $selectedCategory && $selectedCategory->id === $cat->id ? 'border-2 border-brand-gold shadow-card-hover ring-2 ring-brand-gold/30' : 'border-brand-light-border hover:border-brand-gold/60 shadow-soft-luxury' }} p-3 flex flex-col items-center text-center transition-all duration-300"
                 >
-                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden mb-2.5 bg-brand-offwhite border border-brand-gold/30 flex-shrink-0">
-                        <img 
-                            src="{{ $cat->safe_image }}" 
-                            alt="{{ $cat->name }}" 
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            loading="lazy"
-                            onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-                        />
+                    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden mb-2.5 bg-brand-offwhite border border-brand-gold/30 flex-shrink-0 flex items-center justify-center">
+                        @if($cat->safe_image)
+                            <img 
+                                src="{{ $cat->safe_image }}" 
+                                alt="{{ $cat->name }}" 
+                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                loading="lazy"
+                            />
+                        @else
+                            <i class="fas fa-om text-brand-gold text-xl"></i>
+                        @endif
                     </div>
                     <span class="font-serif text-xs sm:text-sm font-bold text-brand-charcoal group-hover:text-brand-burgundy transition-colors truncate w-full">
                         {{ $cat->name }}

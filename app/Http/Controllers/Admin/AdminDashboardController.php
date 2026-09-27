@@ -21,29 +21,32 @@ use Carbon\Carbon;
 class AdminDashboardController extends Controller
 {
     /**
-     * Display the Admin Dashboard with live database statistics & Phase 7 financial operations.
+     * Display the Admin Dashboard with live database statistics & real operations.
      */
     public function index(Request $request)
     {
         $today = Carbon::today()->format('Y-m-d');
 
         $activeBookingsQuery = Booking::whereNotIn('status', ['cancelled', 'rejected']);
-        $confirmedBookingsQuery = Booking::whereIn('status', ['confirmed', 'advance_paid', 'scheduled', 'completed']);
+        $confirmedBookingsQuery = Booking::whereIn('status', ['accepted', 'confirmed', 'advance_paid', 'scheduled', 'completed']);
 
-        $totalAdvanceReceived = (float) Payment::whereIn('status', ['paid', 'successful'])->sum('amount');
+        $totalVerifiedPayments = (float) Payment::whereIn('status', ['paid', 'accepted', 'successful'])->sum('amount');
+        $pendingPaymentAmount = (float) Payment::where('status', 'pending')->sum('amount');
         $totalQuotedValue = (float) Quotation::whereIn('status', ['sent', 'accepted'])->sum('grand_total');
         $confirmedBookingValue = (float) $confirmedBookingsQuery->sum('estimated_total');
         $totalEstimatedPipeline = (float) $activeBookingsQuery->sum('estimated_total');
-        $outstandingBalance = max(0, $confirmedBookingValue - $totalAdvanceReceived);
+        $outstandingBalance = max(0, $confirmedBookingValue - $totalVerifiedPayments);
 
         $counts = [
             'total_bookings' => Booking::count(),
             'today_bookings' => Booking::whereDate('created_at', Carbon::today())->count(),
             'pending_bookings' => Booking::where('status', 'pending')->count(),
+            'accepted_bookings' => Booking::where('status', 'accepted')->count(),
             'quoted_bookings' => Booking::where('status', 'quoted')->count(),
             'confirmed_bookings' => Booking::whereIn('status', ['confirmed', 'advance_paid', 'scheduled'])->count(),
             'completed_bookings' => Booking::where('status', 'completed')->count(),
             'cancelled_bookings' => Booking::whereIn('status', ['cancelled', 'rejected'])->count(),
+            'upcoming_events' => Booking::where('event_date', '>=', $today)->whereIn('status', ['accepted', 'confirmed', 'advance_paid', 'scheduled'])->count(),
             'pending_cancellations' => BookingCancellationRequest::where('status', 'pending')->count(),
             'pending_reschedules' => BookingRescheduleRequest::where('status', 'pending')->count(),
             'total_customers' => User::where('role', 'customer')->count(),
@@ -58,35 +61,38 @@ class AdminDashboardController extends Controller
             'total_booking_value' => $totalEstimatedPipeline,
             'total_quoted_value' => $totalQuotedValue,
             'confirmed_booking_value' => $confirmedBookingValue,
-            'advance_received' => $totalAdvanceReceived,
+            'total_verified_payments' => $totalVerifiedPayments,
+            'pending_payment_requests' => Payment::where('status', 'pending')->count(),
+            'pending_payment_amount' => $pendingPaymentAmount,
+            'advance_received' => $totalVerifiedPayments,
             'outstanding_balance' => $outstandingBalance,
             'total_quotations' => Quotation::count(),
             'total_payments' => Payment::count(),
             'total_invoices' => Invoice::count(),
         ];
 
-        // Recent Bookings (Limit 8)
-        $recentBookings = Booking::with(['user', 'decoration.category'])
+        // Recent Bookings (Limit 8) with decoration & package
+        $recentBookings = Booking::with(['user', 'decoration.category', 'package'])
             ->latest()
             ->take(8)
             ->get();
 
         // Recent Quotations (Limit 5)
-        $recentQuotations = Quotation::with(['customer', 'booking.decoration'])
+        $recentQuotations = Quotation::with(['customer', 'booking.decoration', 'booking.package'])
             ->latest()
             ->take(5)
             ->get();
 
-        // Recent Payments (Limit 5)
-        $recentPayments = Payment::with(['customer', 'booking'])
+        // Recent Payments (Limit 6)
+        $recentPayments = Payment::with(['customer', 'booking.decoration', 'booking.package', 'verifiedByUser'])
             ->latest()
-            ->take(5)
+            ->take(6)
             ->get();
 
-        // Upcoming Confirmed/Scheduled Events
-        $upcomingEvents = Booking::with(['user', 'decoration'])
+        // Upcoming Confirmed/Accepted Events
+        $upcomingEvents = Booking::with(['user', 'decoration', 'package'])
             ->where('event_date', '>=', $today)
-            ->whereIn('status', ['confirmed', 'advance_paid', 'scheduled'])
+            ->whereIn('status', ['accepted', 'confirmed', 'advance_paid', 'scheduled'])
             ->orderBy('event_date', 'asc')
             ->take(6)
             ->get();

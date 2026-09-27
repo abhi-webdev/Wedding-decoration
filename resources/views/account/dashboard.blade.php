@@ -32,8 +32,8 @@
         </div>
     </div>
 
-    <!-- 4 Real Stat Counter Cards -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <!-- 5 Real Stat Counter Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
         
         <!-- Total Bookings -->
         <div class="bg-white rounded-2xl p-5 border border-brand-light-border shadow-soft-luxury space-y-1">
@@ -63,6 +63,20 @@
             <span class="text-[10px] text-amber-700 block">Manager review in progress</span>
         </div>
 
+        <!-- Accepted (Ready for Payment) -->
+        <div class="bg-white rounded-2xl p-5 border border-brand-light-border shadow-soft-luxury space-y-1">
+            <div class="flex items-center justify-between text-blue-700">
+                <span class="text-[11px] font-bold uppercase tracking-wider">Accepted</span>
+                <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <div class="font-serif text-2xl sm:text-3xl font-bold text-blue-900">
+                {{ $acceptedBookings ?? 0 }}
+            </div>
+            <span class="text-[10px] text-blue-700 block">Ready for advance deposit</span>
+        </div>
+
         <!-- Confirmed / Scheduled -->
         <div class="bg-white rounded-2xl p-5 border border-brand-light-border shadow-soft-luxury space-y-1">
             <div class="flex items-center justify-between text-emerald-700">
@@ -80,7 +94,7 @@
         <!-- Completed -->
         <div class="bg-white rounded-2xl p-5 border border-brand-light-border shadow-soft-luxury space-y-1">
             <div class="flex items-center justify-between text-purple-700">
-                <span class="text-[11px] font-bold uppercase tracking-wider">Completed Events</span>
+                <span class="text-[11px] font-bold uppercase tracking-wider">Completed</span>
                 <div class="w-8 h-8 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center text-xs">
                     <i class="fas fa-award"></i>
                 </div>
@@ -88,7 +102,7 @@
             <div class="font-serif text-2xl sm:text-3xl font-bold text-purple-900">
                 {{ $completedBookings }}
             </div>
-            <span class="text-[10px] text-purple-700 block">Successfully executed setups</span>
+            <span class="text-[10px] text-purple-700 block">Executed events</span>
         </div>
 
     </div>
@@ -121,21 +135,27 @@
                         
                         <!-- Left Info -->
                         <div class="flex items-start gap-3.5">
-                            <div class="w-14 h-14 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border">
-                                <img 
-                                    src="{{ $booking->decoration->safe_primary_image }}" 
-                                    alt="{{ $booking->decoration->name }}" 
-                                    class="w-full h-full object-cover"
-                                    onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-                                />
+                            <div class="w-14 h-14 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border flex items-center justify-center">
+                                @if($booking->booked_item_image)
+                                    <img 
+                                        src="{{ $booking->booked_item_image }}" 
+                                        alt="{{ $booking->booked_item_name }}" 
+                                        class="w-full h-full object-cover"
+                                    />
+                                @else
+                                    <i class="fas fa-camera text-brand-gold text-base"></i>
+                                @endif
                             </div>
                             <div class="space-y-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <span class="font-serif text-sm font-bold text-brand-charcoal truncate">
-                                        {{ $booking->decoration->name }}
+                                        {{ $booking->booked_item_name }}
                                     </span>
                                     <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $booking->status_badge_classes }}">
                                         {{ $booking->status_label }}
+                                    </span>
+                                    <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $booking->payment_status_badge_classes }}">
+                                        {{ $booking->payment_status_label }}
                                     </span>
                                 </div>
                                 <div class="flex items-center gap-3 text-xs text-brand-muted-brown flex-wrap">
@@ -146,17 +166,19 @@
                             </div>
                         </div>
 
-                        <!-- Right Actions & Total -->
-                        <div class="flex items-center justify-between sm:justify-end gap-4 pl-16 sm:pl-0">
+                        <!-- Right Actions -->
+                        <div class="flex items-center gap-3 self-end sm:self-auto">
                             <div class="text-right">
-                                <span class="text-[10px] text-brand-muted-brown uppercase tracking-wider block font-medium">Estimated</span>
-                                <span class="font-serif text-base font-bold text-brand-burgundy">{{ $booking->formatted_estimated_total }}</span>
+                                <span class="text-xs text-brand-muted-brown block font-medium">Estimated Total</span>
+                                <span class="font-serif text-sm font-bold text-brand-burgundy block">
+                                    {{ $booking->formatted_estimated_total }}
+                                </span>
                             </div>
                             <a 
                                 href="{{ route('account.bookings.show', $booking->booking_reference) }}" 
-                                class="px-3.5 py-1.5 text-xs font-bold text-brand-charcoal hover:text-brand-burgundy bg-brand-offwhite hover:bg-brand-cream border border-brand-light-border rounded-lg transition-colors whitespace-nowrap"
+                                class="px-3.5 py-1.5 text-xs font-bold text-brand-charcoal bg-brand-offwhite hover:bg-brand-gold/20 rounded-xl border border-brand-light-border transition"
                             >
-                                Details <i class="fas fa-chevron-right text-[10px] ml-1"></i>
+                                Details &rarr;
                             </a>
                         </div>
 

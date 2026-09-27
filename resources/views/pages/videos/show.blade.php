@@ -8,16 +8,6 @@
 @section('og_image', $video->safe_thumbnail_url)
 
 @section('content')
-<!-- Breadcrumbs -->
-<div class="bg-brand-offwhite border-b border-brand-light-border/70 py-3">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-brand-muted-brown flex items-center gap-2">
-        <a href="{{ route('home') }}" class="hover:text-brand-burgundy transition">Home</a>
-        <i class="fas fa-chevron-right text-[9px] text-gray-400"></i>
-        <a href="{{ route('videos.index') }}" class="hover:text-brand-burgundy transition">Reels &amp; Videos</a>
-        <i class="fas fa-chevron-right text-[9px] text-gray-400"></i>
-        <span class="text-brand-charcoal font-semibold truncate">{{ $video->title }}</span>
-    </div>
-</div>
 
 <div class="bg-brand-cream py-10 sm:py-14">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">

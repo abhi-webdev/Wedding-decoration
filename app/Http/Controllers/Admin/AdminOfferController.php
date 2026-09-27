@@ -116,6 +116,7 @@ class AdminOfferController extends Controller
             'is_active' => 'nullable|boolean',
             'sort_order' => 'nullable|integer',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
 
         $validated['slug'] = !empty($validated['slug']) ? Str::slug($validated['slug']) : Str::slug($validated['title']);
@@ -123,6 +124,15 @@ class AdminOfferController extends Controller
         $validated['is_featured'] = $request->has('is_featured');
         $validated['is_active'] = $request->has('is_active');
         $validated['sort_order'] = $validated['sort_order'] ?? 0;
+
+        // Handle explicit image removal
+        if ($request->boolean('remove_image')) {
+            if ($offer->image && str_starts_with($offer->image, 'uploads/offers/') && file_exists(public_path($offer->image))) {
+                @unlink(public_path($offer->image));
+            }
+            $validated['image'] = null;
+            $validated['image_url'] = null;
+        }
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
@@ -158,6 +168,11 @@ class AdminOfferController extends Controller
     {
         $offer = Offer::findOrFail($id);
         $title = $offer->title;
+
+        if ($offer->image && str_starts_with($offer->image, 'uploads/offers/') && file_exists(public_path($offer->image))) {
+            @unlink(public_path($offer->image));
+        }
+
         $offer->delete();
 
         AdminActivityLog::log(

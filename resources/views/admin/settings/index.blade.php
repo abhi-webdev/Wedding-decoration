@@ -37,6 +37,12 @@
                         <div class="flex-1 space-y-1">
                             <input type="file" name="site_logo" accept="image/png,image/webp,image/svg+xml,image/jpeg" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200">
                             <p class="text-[10px] text-slate-400">Recommended: Transparent PNG or SVG (Max 5MB)</p>
+                            @if(isset($settings['site_logo']) && $settings['site_logo']->value && file_exists(public_path($settings['site_logo']->value)))
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer pt-1">
+                                    <input type="checkbox" name="remove_site_logo" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                                    <span>Remove logo</span>
+                                </label>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -55,6 +61,36 @@
                         <div class="flex-1 space-y-1">
                             <input type="file" name="site_favicon" accept="image/png,image/x-icon,image/vnd.microsoft.icon" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200">
                             <p class="text-[10px] text-slate-400">Recommended: 32x32 or 64x64 PNG (Max 2MB)</p>
+                            @if(isset($settings['site_favicon']) && $settings['site_favicon']->value && file_exists(public_path($settings['site_favicon']->value)))
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer pt-1">
+                                    <input type="checkbox" name="remove_site_favicon" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                                    <span>Remove favicon</span>
+                                </label>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Banner Image -->
+                <div class="md:col-span-2 space-y-2 p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <label class="block font-bold text-slate-700 uppercase tracking-wider text-[11px]">Homepage Hero Banner / Background (Optional)</label>
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                        <div class="w-28 h-16 rounded-xl bg-white border border-slate-200 flex items-center justify-center p-1 overflow-hidden shrink-0 shadow-sm">
+                            @if(isset($settings['hero_banner']) && $settings['hero_banner']->value && file_exists(public_path($settings['hero_banner']->value)))
+                                <img src="{{ asset($settings['hero_banner']->value) }}" alt="Hero Banner" class="w-full h-full object-cover">
+                            @else
+                                <span class="text-[10px] text-slate-400">Default Gradient</span>
+                            @endif
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <input type="file" name="hero_banner" accept="image/jpeg,image/png,image/webp" class="w-full text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-semibold file:bg-amber-100 file:text-amber-900 hover:file:bg-amber-200">
+                            <p class="text-[10px] text-slate-400">Recommended: 1920x1080 WEBP or JPG (Max 5MB)</p>
+                            @if(isset($settings['hero_banner']) && $settings['hero_banner']->value && file_exists(public_path($settings['hero_banner']->value)))
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer pt-1">
+                                    <input type="checkbox" name="remove_hero_banner" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                                    <span>Remove banner image</span>
+                                </label>
+                            @endif
                         </div>
                     </div>
                 </div>

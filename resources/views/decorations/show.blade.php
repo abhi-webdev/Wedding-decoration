@@ -9,13 +9,6 @@
 
 @section('content')
 
-    <!-- 1. Breadcrumb Navigation -->
-    <x-breadcrumb :items="[
-        ['label' => 'Decorations', 'url' => route('decorations.index')],
-        ['label' => $decoration->category->name, 'url' => route('decorations.category', $decoration->category->slug)],
-        ['label' => $decoration->name, 'url' => '']
-    ]" />
-
     <!-- 2. Main Decoration Showcase Section -->
     <section class="py-8 sm:py-12 bg-brand-cream relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

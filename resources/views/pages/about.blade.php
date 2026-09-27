@@ -5,12 +5,6 @@
 
 @section('content')
 
-    <!-- Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('home')],
-        ['label' => 'About Aditya Utsav', 'url' => '']
-    ]" />
-
     <!-- Hero Banner Section -->
     <section class="relative bg-brand-burgundy py-14 sm:py-20 text-white overflow-hidden">
         <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:16px_16px]"></div>
@@ -66,14 +60,21 @@
                     </div>
                 </div>
 
-                <!-- Right: Authentic Wedding Imagery (5 cols) -->
+                <!-- Right: Authentic Wedding Culture Showcase (5 cols) -->
                 <div class="lg:col-span-5 relative">
-                    <div class="rounded-3xl overflow-hidden border border-brand-gold/40 shadow-soft-luxury aspect-[4/3] bg-brand-offwhite">
-                        <img 
-                            src="{{ asset('images/decorations/jaimala-stage-01.jpg') }}" 
-                            alt="Aditya Utsav Wedding Decoration Setup in Bihar" 
-                            class="w-full h-full object-cover"
-                        />
+                    <div class="rounded-3xl overflow-hidden border border-brand-gold/40 shadow-soft-luxury aspect-[4/3] bg-gradient-to-br from-brand-deep-burgundy via-brand-burgundy to-brand-royal-rose p-8 flex flex-col items-center justify-center text-center text-white relative">
+                        <div class="w-16 h-16 rounded-2xl bg-brand-gold/20 border border-brand-gold/60 text-brand-gold flex items-center justify-center text-2xl shadow-gold-glow mb-4">
+                            <i class="fas fa-om"></i>
+                        </div>
+                        <h4 class="font-serif text-2xl font-bold text-white tracking-wide">
+                            Aditya Utsav
+                        </h4>
+                        <span class="text-xs text-brand-gold-light uppercase tracking-[0.25em] font-semibold mt-1">
+                            Bihar Vivah Parampara
+                        </span>
+                        <p class="text-xs text-brand-cream/80 max-w-xs mt-3 leading-relaxed">
+                            Crafting divine Vedic Mandaps, majestic Jaimala stages, and radiant Haldi celebrations across Siwan, Patna, and all of Bihar.
+                        </p>
                     </div>
                 </div>
 

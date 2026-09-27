@@ -112,13 +112,24 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <!-- Video Source -->
                     <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <h4 class="font-bold text-xs text-slate-800">Current Video: <span class="font-mono text-[11px] text-slate-500 truncate block">{{ $video->video_path ?: 'Default Demo Video' }}</span></h4>
+                        <h4 class="font-bold text-xs text-slate-800">Current Video File:</h4>
+                        <div class="p-2.5 bg-white border border-slate-200 rounded-lg text-xs space-y-1">
+                            @if($video->safe_video_url)
+                                <p class="font-mono text-[11px] text-emerald-700 truncate font-semibold">✓ {{ $video->video_path }}</p>
+                                <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer pt-1">
+                                    <input type="checkbox" name="remove_video" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                                    <span>Remove current video</span>
+                                </label>
+                            @else
+                                <p class="text-slate-400 text-xs">No local video file uploaded</p>
+                            @endif
+                        </div>
                         
                         <div id="dropZone_vid" class="relative border-2 border-dashed border-slate-300 hover:border-amber-500 bg-white rounded-xl p-4 text-center transition cursor-pointer">
                             <input type="file" name="video_file" id="video_file_input" accept="video/mp4,video/webm,video/quicktime,video/ogg" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                             
                             <div id="prompt_vid" class="space-y-1">
-                                <svg class="w-6 h-6 mx-auto text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                <svg class="w-7 h-7 mx-auto text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                                 <p class="text-xs font-semibold text-slate-700">Choose Replacement Video</p>
                                 <p class="text-[10px] text-slate-400">MP4, WEBM, MOV (Max 100MB)</p>
                             </div>
@@ -135,12 +146,23 @@
                     <!-- Thumbnail Source -->
                     <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
                         <div class="flex items-center gap-3">
-                            <div class="w-12 h-16 rounded bg-stone-900 overflow-hidden shrink-0 border border-slate-200">
-                                <img src="{{ $video->safe_thumbnail_url }}" alt="" class="w-full h-full object-cover">
+                            <div class="w-12 h-16 rounded bg-stone-900 overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center">
+                                @if($video->safe_thumbnail_url)
+                                    <img src="{{ $video->safe_thumbnail_url }}" alt="" class="w-full h-full object-cover">
+                                @else
+                                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                @endif
                             </div>
-                            <div>
+                            <div class="space-y-1">
                                 <h4 class="font-bold text-xs text-slate-800">Poster / Cover Image</h4>
-                                <span class="text-[10px] text-slate-400">Current Thumbnail Preview</span>
+                                @if($video->safe_thumbnail_url)
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer">
+                                        <input type="checkbox" name="remove_thumbnail" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                                        <span>Remove thumbnail</span>
+                                    </label>
+                                @else
+                                    <span class="text-[10px] text-slate-400">No thumbnail uploaded</span>
+                                @endif
                             </div>
                         </div>
 
@@ -148,7 +170,7 @@
                             <input type="file" name="thumbnail_file" id="vthumb_file_input" accept="image/jpeg,image/png,image/jpg,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                             
                             <div id="prompt_vthumb" class="space-y-1">
-                                <svg class="w-5 h-5 mx-auto text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <svg class="w-6 h-6 mx-auto text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 <p class="text-[11px] font-semibold text-slate-700">Replace Thumbnail Image</p>
                                 <p class="text-[9px] text-slate-400">Max 5MB</p>
                             </div>

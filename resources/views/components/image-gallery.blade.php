@@ -1,32 +1,44 @@
 @props(['decoration'])
 
 @php
-    $images = $decoration->images;
-    if ($images->isEmpty()) {
+    $validImages = $decoration->images->filter(function($img) {
+        return !empty($img->safe_url);
+    });
+    
+    if ($validImages->isEmpty()) {
         $primaryUrl = $decoration->safe_primary_image;
-        $imagesList = [
+        $imagesList = $primaryUrl ? [
             (object)[
                 'safe_url' => $primaryUrl,
                 'caption' => $decoration->name,
                 'alt_text' => 'Traditional Bihar ' . $decoration->name . ' in ' . $decoration->location
             ]
-        ];
+        ] : [];
     } else {
-        $primaryUrl = $images->first()->safe_url;
-        $imagesList = $images;
+        $primaryUrl = $validImages->first()->safe_url;
+        $imagesList = $validImages;
     }
 @endphp
 
 <div class="space-y-4" id="gallery-component">
     <!-- Large Main Image Container -->
-    <div class="relative rounded-2xl overflow-hidden bg-brand-charcoal border-2 border-brand-gold/40 shadow-card-hover group h-80 sm:h-[460px]">
-        <img 
-            id="gallery-main-display" 
-            src="{{ $primaryUrl }}" 
-            alt="Traditional Bihar {{ $decoration->name }} setup in {{ $decoration->location }}" 
-            class="w-full h-full object-cover transition-opacity duration-300"
-            onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-        />
+    <div class="relative rounded-2xl overflow-hidden bg-brand-charcoal border-2 border-brand-gold/40 shadow-card-hover group h-80 sm:h-[460px] flex items-center justify-center">
+        @if($primaryUrl)
+            <img 
+                id="gallery-main-display" 
+                src="{{ $primaryUrl }}" 
+                alt="Traditional Bihar {{ $decoration->name }} setup in {{ $decoration->location }}" 
+                class="w-full h-full object-cover transition-opacity duration-300"
+            />
+        @else
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-deep-burgundy via-brand-burgundy to-brand-royal-rose p-8 text-center text-white">
+                <div class="w-16 h-16 rounded-2xl bg-brand-gold/20 text-brand-gold flex items-center justify-center mb-3 border border-brand-gold/40 shadow-gold-glow">
+                    <i class="fas fa-camera text-2xl"></i>
+                </div>
+                <h3 class="font-serif text-xl font-bold text-white">{{ $decoration->name }}</h3>
+                <span class="text-xs text-brand-gold-light mt-1 uppercase tracking-wider font-semibold">Image Coming Soon</span>
+            </div>
+        @endif
 
         <!-- Gradient Vignette -->
         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
@@ -44,15 +56,17 @@
         </div>
 
         <!-- Lightbox Trigger Button -->
-        <button 
-            type="button" 
-            onclick="openImageLightbox()" 
-            class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm text-brand-charcoal hover:text-brand-burgundy hover:bg-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
-            title="View full screen photo"
-            aria-label="View larger image"
-        >
-            <i class="fas fa-expand-alt text-sm"></i>
-        </button>
+        @if($primaryUrl)
+            <button 
+                type="button" 
+                onclick="openImageLightbox()" 
+                class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm text-brand-charcoal hover:text-brand-burgundy hover:bg-white flex items-center justify-center shadow-lg transition-transform active:scale-95"
+                title="View full screen photo"
+                aria-label="View larger image"
+            >
+                <i class="fas fa-expand-alt text-sm"></i>
+            </button>
+        @endif
 
         <!-- Image Caption Bar -->
         <div class="absolute bottom-3 left-4 right-4 text-white text-xs flex items-center justify-between pointer-events-none">
@@ -80,7 +94,6 @@
                         alt="{{ $img->alt_text ?? $decoration->name }}" 
                         class="w-full h-full object-cover"
                         loading="lazy"
-                        onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
                     />
                 </button>
             @endforeach

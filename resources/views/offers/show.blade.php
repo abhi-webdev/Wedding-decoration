@@ -5,13 +5,6 @@
 
 @section('content')
 
-    <!-- Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('home')],
-        ['label' => 'Special Offers', 'url' => route('offers.index')],
-        ['label' => $offer->title, 'url' => '']
-    ]" />
-
     <!-- Offer Detail Main Section -->
     <section class="py-10 sm:py-16 bg-brand-cream relative">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

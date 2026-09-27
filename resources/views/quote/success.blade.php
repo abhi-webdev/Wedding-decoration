@@ -5,13 +5,6 @@
 
 @section('content')
 
-    <!-- Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('home')],
-        ['label' => 'Custom Quote', 'url' => route('quote')],
-        ['label' => 'Received #' . $quoteRequest->quote_reference, 'url' => '']
-    ]" />
-
     <!-- Success Confirmation Section -->
     <section class="py-12 sm:py-20 bg-brand-cream relative">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">

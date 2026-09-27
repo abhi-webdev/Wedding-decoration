@@ -36,15 +36,18 @@ class DecorationImage extends Model
         if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
             return null;
         }
-        if (str_starts_with($img, 'uploads/')) {
+        if (file_exists(public_path($img))) {
+            return asset($img);
+        }
+        if (file_exists(public_path('storage/' . $img))) {
             return asset('storage/' . $img);
+        }
+        if (str_starts_with($img, 'uploads/')) {
+            return asset($img);
         }
         if (str_starts_with($img, 'storage/')) {
             return asset($img);
         }
-        if (file_exists(public_path($img))) {
-            return asset($img);
-        }
-        return asset('storage/' . $img);
+        return null;
     }
 }

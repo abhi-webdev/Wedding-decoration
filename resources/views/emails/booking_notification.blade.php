@@ -35,11 +35,26 @@
             <h2 class="heading">{{ $heading ?? 'Namaste!' }}</h2>
             <p class="message">{{ $message }}</p>
 
-            @if(isset($booking))
+            @if(isset($extraDetails) && is_array($extraDetails))
+            <div class="details-box">
+                @foreach($extraDetails as $label => $val)
+                <div class="details-row">
+                    <span class="details-label">{{ $label }}:</span>
+                    <span class="details-value" @if(str_contains(strtolower($label), 'password') || str_contains(strtolower($label), 'login')) style="color: #72002F; font-family: monospace; font-size: 14px;" @endif>{{ $val }}</span>
+                </div>
+                @endforeach
+            </div>
+            @endif
+
+            @if(isset($booking) && (!isset($extraDetails) || empty($extraDetails)))
             <div class="details-box">
                 <div class="details-row">
                     <span class="details-label">Booking Reference:</span>
                     <span class="details-value">{{ $booking->booking_reference }}</span>
+                </div>
+                <div class="details-row">
+                    <span class="details-label">Booked Item:</span>
+                    <span class="details-value">{{ $booking->booked_item_name }}</span>
                 </div>
                 <div class="details-row">
                     <span class="details-label">Event Date:</span>
@@ -51,7 +66,7 @@
                 </div>
                 <div class="details-row">
                     <span class="details-label">Status:</span>
-                    <span class="details-value" style="color: #72002F;">{{ strtoupper($booking->status) }}</span>
+                    <span class="details-value" style="color: #72002F;">{{ strtoupper($booking->status_label) }}</span>
                 </div>
             </div>
             @endif

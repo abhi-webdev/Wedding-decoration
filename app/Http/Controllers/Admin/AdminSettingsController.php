@@ -20,8 +20,25 @@ class AdminSettingsController extends Controller
     {
         $inputs = $request->except(['_token', '_method']);
 
-        // Handle file uploads for branding
+        // Handle removal of branding files
         $fileKeys = ['site_logo', 'site_favicon', 'hero_banner', 'site_watermark'];
+        foreach ($fileKeys as $fileKey) {
+            if ($request->boolean('remove_' . $fileKey)) {
+                $setting = SiteSetting::where('key', $fileKey)->first();
+                if ($setting && $setting->value && str_starts_with($setting->value, 'uploads/site/') && file_exists(public_path($setting->value))) {
+                    @unlink(public_path($setting->value));
+                }
+                SiteSetting::updateOrCreate(
+                    ['key' => $fileKey],
+                    [
+                        'value' => null,
+                        'group' => 'branding',
+                    ]
+                );
+            }
+        }
+
+        // Handle file uploads for branding
         foreach ($fileKeys as $fileKey) {
             if ($request->hasFile($fileKey) && $request->file($fileKey)->isValid()) {
                 $file = $request->file($fileKey);
@@ -36,6 +53,12 @@ class AdminSettingsController extends Controller
                     }
                     $file->move($destPath, $fileName);
                     
+                    // Clean up old file if exists
+                    $setting = SiteSetting::where('key', $fileKey)->first();
+                    if ($setting && $setting->value && str_starts_with($setting->value, 'uploads/site/') && file_exists(public_path($setting->value))) {
+                        @unlink(public_path($setting->value));
+                    }
+
                     SiteSetting::updateOrCreate(
                         ['key' => $fileKey],
                         [

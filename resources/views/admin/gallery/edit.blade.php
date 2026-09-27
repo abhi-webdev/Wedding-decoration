@@ -37,16 +37,29 @@
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <!-- Current Photo -->
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                     <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Current Photo</span>
-                    <div class="h-32 rounded-lg overflow-hidden border border-slate-200 bg-white">
-                        <img src="{{ $item->display_image }}" alt="{{ $item->title }}" class="w-full h-full object-cover">
+                    <div class="h-32 rounded-lg overflow-hidden border border-slate-200 bg-white flex items-center justify-center">
+                        @if($item->display_image)
+                            <img src="{{ $item->display_image }}" alt="{{ $item->title }}" class="w-full h-full object-cover">
+                        @else
+                            <div class="text-center p-3 text-slate-400 flex flex-col items-center justify-center">
+                                <svg class="w-8 h-8 mb-1 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <span class="text-[11px] font-medium">No photo uploaded yet</span>
+                            </div>
+                        @endif
                     </div>
+                    @if($item->display_image)
+                        <label class="inline-flex items-center gap-1.5 text-xs text-red-600 cursor-pointer pt-1">
+                            <input type="checkbox" name="remove_image" value="1" class="rounded text-red-600 focus:ring-red-500 border-slate-300">
+                            <span>Remove current photo</span>
+                        </label>
+                    @endif
                 </div>
 
                 <!-- Replace Photo -->
                 <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Upload New</span>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Upload / Replace Photo</span>
                     <div id="dropZone_gal" class="relative border-2 border-dashed border-slate-300 hover:border-amber-500 bg-white rounded-lg p-3 text-center transition cursor-pointer h-32 flex flex-col items-center justify-center">
                         <input type="file" name="image" id="gal_image_input" accept="image/jpeg,image/png,image/jpg,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
                         

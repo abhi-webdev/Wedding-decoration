@@ -15,11 +15,13 @@
 
             <select name="status" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-amber-500">
                 <option value="">All Statuses</option>
-                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed</option>
+                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending (Under Review)</option>
+                <option value="accepted" {{ request('status') === 'accepted' ? 'selected' : '' }}>Accepted (Ready for Payment)</option>
+                <option value="confirmed" {{ request('status') === 'confirmed' ? 'selected' : '' }}>Confirmed (Advance Paid)</option>
                 <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
                 <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Completed</option>
                 <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
             </select>
 
             <select name="city" class="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 focus:outline-none focus:border-amber-500">
@@ -32,7 +34,7 @@
             <button type="submit" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs transition">
                 Filter
             </button>
-            @if(request()->anyFilled(['search', 'status', 'city', 'date_from', 'date_to']))
+            @if(request()->anyFilled(['search', 'status', 'city', 'event_date']))
                 <a href="{{ route('admin.bookings.index') }}" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs flex items-center justify-center">
                     Reset
                 </a>
@@ -48,10 +50,11 @@
                     <tr>
                         <th class="py-3.5 px-4">Booking Ref</th>
                         <th class="py-3.5 px-4">Customer Details</th>
-                        <th class="py-3.5 px-4">Decoration Theme</th>
+                        <th class="py-3.5 px-4">Booked Item</th>
                         <th class="py-3.5 px-4">Event Date & City</th>
-                        <th class="py-3.5 px-4">Estimated Total</th>
-                        <th class="py-3.5 px-4">Status</th>
+                        <th class="py-3.5 px-4">Financials</th>
+                        <th class="py-3.5 px-4">Booking Status</th>
+                        <th class="py-3.5 px-4">Payment</th>
                         <th class="py-3.5 px-4 text-right">Action</th>
                     </tr>
                 </thead>
@@ -67,34 +70,39 @@
                                 <span class="text-[11px] text-slate-500 block">{{ $booking->customer_phone }}</span>
                                 <span class="text-[11px] text-slate-400 block truncate max-w-[180px]">{{ $booking->customer_email }}</span>
                             </td>
-                            <td class="py-3.5 px-4 font-medium text-slate-800">
-                                @if($booking->decoration)
-                                    <span class="font-semibold text-slate-900 block">{{ $booking->decoration->name }}</span>
-                                    <span class="text-[10px] text-slate-400">{{ $booking->decoration->category->name ?? 'Category' }}</span>
-                                @else
-                                    <span class="text-slate-500 italic">Custom Request</span>
-                                @endif
+                            <td class="py-3.5 px-4 font-medium text-slate-800 max-w-[180px]">
+                                <span class="font-semibold text-slate-900 block truncate">{{ $booking->booked_item_name }}</span>
+                                <span class="text-[10px] text-slate-400 uppercase font-bold">{{ $booking->booked_item_type_label }}</span>
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
                                 <span class="font-bold text-amber-800 block">{{ \Carbon\Carbon::parse($booking->event_date)->format('d M Y') }}</span>
-                                <span class="text-[11px] text-slate-600 block">{{ $booking->event_city ?? 'Bihar' }}</span>
+                                <span class="text-[11px] text-slate-600 block">{{ $booking->event_city ?? $booking->city ?? 'Bihar' }}</span>
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
-                                <span class="font-bold text-slate-900 text-sm block">₹{{ number_format($booking->total_price) }}</span>
-                                <span class="text-[10px] text-slate-400 uppercase font-semibold">ESTIMATED</span>
+                                <span class="font-bold text-slate-900 text-sm block">₹{{ number_format($booking->effective_total) }}</span>
+                                <div class="text-[10px] text-slate-500 flex gap-2">
+                                    <span class="text-emerald-700 font-semibold">Paid: ₹{{ number_format($booking->total_paid) }}</span>
+                                    <span class="text-rose-600 font-semibold">Rem: ₹{{ number_format($booking->balance_due) }}</span>
+                                </div>
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
-                                    {{ $booking->status === 'confirmed' ? 'bg-emerald-100 text-emerald-800' :
+                                    {{ in_array($booking->status, ['confirmed', 'advance_paid', 'scheduled']) ? 'bg-emerald-100 text-emerald-800' :
+                                       ($booking->status === 'accepted' ? 'bg-blue-100 text-blue-800' :
                                        ($booking->status === 'pending' ? 'bg-amber-100 text-amber-800' :
                                        ($booking->status === 'in_progress' ? 'bg-purple-100 text-purple-800' :
-                                       ($booking->status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                                       ($booking->status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-800')))) }}">
+                                       ($booking->status === 'completed' ? 'bg-teal-100 text-teal-800' :
+                                       ($booking->status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-800'))))) }}">
                                     {{ str_replace('_', ' ', $booking->status) }}
                                 </span>
                             </td>
+                            <td class="py-3.5 px-4 whitespace-nowrap">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $booking->payment_status_badge_classes }}">
+                                    {{ $booking->payment_status_label }}
+                                </span>
+                            </td>
                             <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                                <a href="{{ route('admin.bookings.show', $booking->id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold transition">
+                                <a href="{{ route('admin.bookings.show', $booking->id) }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold transition shadow-sm">
                                     <span>Manage</span>
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                 </a>
@@ -102,7 +110,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-400">
+                            <td colspan="8" class="py-12 text-center text-slate-400">
                                 No bookings matched your filter criteria.
                             </td>
                         </tr>

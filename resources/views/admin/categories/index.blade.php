@@ -37,9 +37,13 @@
                     @forelse($categories as $cat)
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="py-3.5 px-4 font-bold text-slate-900">
-                                <div class="flex items-center gap-2">
-                                    @if($cat->image_url)
-                                        <img src="{{ $cat->image_url }}" alt="" class="w-8 h-8 rounded-lg object-cover border border-slate-200">
+                                <div class="flex items-center gap-2.5">
+                                    @if($cat->safe_image)
+                                        <img src="{{ $cat->safe_image }}" alt="{{ $cat->name }}" class="w-8 h-8 rounded-lg object-cover border border-slate-200 shrink-0">
+                                    @else
+                                        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs border border-amber-200/60 shrink-0">
+                                            {{ strtoupper(substr($cat->name, 0, 1)) }}
+                                        </div>
                                     @endif
                                     <span>{{ $cat->name }}</span>
                                 </div>

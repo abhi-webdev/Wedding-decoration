@@ -5,12 +5,6 @@
 
 @section('content')
 
-    <!-- Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('home')],
-        ['label' => 'Terms & Conditions', 'url' => '']
-    ]" />
-
     <!-- Hero Banner Section -->
     <section class="relative bg-brand-burgundy py-12 sm:py-16 text-white overflow-hidden">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-3">

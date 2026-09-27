@@ -61,10 +61,15 @@ Route::get('/decorations/{category}', [DecorationController::class, 'category'])
 Route::get('/decoration/{slug}', [DecorationController::class, 'show'])->name('decorations.show');
 
 // Phase 3: Booking Request & Availability Workflow
-Route::get('/booking/check-availability', [BookingController::class, 'checkAvailability'])->name('booking.checkAvailability');
+Route::match(['get', 'post'], '/booking/check-availability', [BookingController::class, 'checkAvailability'])->name('booking.checkAvailability');
+Route::match(['get', 'post'], '/booking/availability', [BookingController::class, 'availabilityResults'])->name('booking.availability');
+Route::match(['get', 'post'], '/booking/availability-results', [BookingController::class, 'availabilityResults'])->name('booking.availabilityResults');
+Route::get('/booking/decoration/{decoration}', [BookingController::class, 'create'])->name('booking.createDecoration');
+Route::get('/booking/package/{package}', [BookingController::class, 'createPackage'])->name('booking.createPackage');
 Route::get('/booking/confirmation/{reference}', [BookingController::class, 'confirmation'])->name('booking.confirmation');
 Route::get('/booking/{decoration}', [BookingController::class, 'create'])->name('booking.create');
 Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+Route::get('/receipts/{receipt_number}', [CustomerPaymentController::class, 'receiptByNumber'])->name('receipts.public.show');
 
 // Phase 5 & 8: Packages, Offers, Gallery, Reels & Videos, Custom Quote, Pages & Policies
 Route::get('/packages', [PackageController::class, 'index'])->name('packages.index');
@@ -105,6 +110,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     // Dashboard & Profile
     Route::get('/account', [AccountController::class, 'dashboard'])->name('account.dashboard');
+    Route::get('/account/dashboard', function() { return redirect()->route('account.dashboard'); });
     Route::get('/account/profile', [AccountController::class, 'profile'])->name('account.profile');
     Route::patch('/account/profile', [AccountController::class, 'updateProfile'])->name('account.profile.update');
     Route::get('/account/password', [AccountController::class, 'password'])->name('account.password');
@@ -123,6 +129,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/account/quotations/{id}/reject', [CustomerQuotationController::class, 'reject'])->name('account.quotations.reject');
 
     Route::get('/account/payments', [CustomerPaymentController::class, 'index'])->name('account.payments.index');
+    Route::post('/account/payments', [CustomerPaymentController::class, 'store'])->name('account.payments.store');
+    Route::get('/account/payments/{id}/receipt', [CustomerPaymentController::class, 'receipt'])->name('account.payments.receipt');
+    Route::get('/account/receipts/{receipt_number}', [CustomerPaymentController::class, 'receiptByNumber'])->name('account.receipts.show');
 
     Route::get('/account/invoices', [CustomerInvoiceController::class, 'index'])->name('account.invoices.index');
     Route::get('/account/invoices/{id}', [CustomerInvoiceController::class, 'show'])->name('account.invoices.show');
@@ -142,6 +151,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         // Bookings Management
         Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
         Route::get('/bookings/{id}', [AdminBookingController::class, 'show'])->name('bookings.show');
+        Route::post('/bookings/{id}/accept', [AdminBookingController::class, 'acceptBooking'])->name('bookings.accept');
+        Route::post('/bookings/{id}/reject', [AdminBookingController::class, 'rejectBooking'])->name('bookings.reject');
         Route::patch('/bookings/{id}/status', [AdminBookingController::class, 'updateStatus'])->name('bookings.updateStatus');
 
         // Phase 7: Quotation Workflow
@@ -154,11 +165,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/quotations/{id}/send', [AdminQuotationController::class, 'send'])->name('quotations.send');
         Route::post('/quotations/{id}/cancel', [AdminQuotationController::class, 'cancel'])->name('quotations.cancel');
 
-        // Phase 7: Payment Tracking
+        // Phase 7: Payment Tracking & Verification
         Route::get('/payments', [AdminPaymentController::class, 'index'])->name('payments.index');
+        Route::get('/payments/requests', [AdminPaymentController::class, 'requests'])->name('payments.requests');
         Route::get('/payments/create', [AdminPaymentController::class, 'create'])->name('payments.create');
         Route::post('/payments', [AdminPaymentController::class, 'store'])->name('payments.store');
         Route::get('/payments/{id}', [AdminPaymentController::class, 'show'])->name('payments.show');
+        Route::post('/payments/{id}/accept', [AdminPaymentController::class, 'acceptPayment'])->name('payments.accept');
+        Route::post('/payments/{id}/reject', [AdminPaymentController::class, 'rejectPayment'])->name('payments.reject');
+        Route::get('/payments/{id}/receipt', [AdminPaymentController::class, 'receipt'])->name('payments.receipt');
+        Route::get('/receipts/{receipt_number}', [AdminPaymentController::class, 'receiptByNumber'])->name('receipts.show');
 
         // Phase 7: Invoices & Receipts
         Route::get('/invoices', [AdminInvoiceController::class, 'index'])->name('invoices.index');

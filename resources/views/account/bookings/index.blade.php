@@ -26,7 +26,7 @@
             </a>
         </div>
 
-        <!-- Filter Tabs (All, Pending, Confirmed, Completed, Cancelled) -->
+        <!-- Filter Tabs (All, Pending, Accepted, Confirmed, Completed, Cancelled) -->
         <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold scrollbar-none">
             <a 
                 href="{{ request()->fullUrlWithQuery(['status' => 'all', 'page' => 1]) }}" 
@@ -42,6 +42,14 @@
             >
                 <span>Pending Review</span>
                 <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $statusFilter === 'pending' ? 'bg-white text-amber-800' : 'bg-white border border-brand-light-border' }}">{{ $counts['pending'] }}</span>
+            </a>
+
+            <a 
+                href="{{ request()->fullUrlWithQuery(['status' => 'accepted', 'page' => 1]) }}" 
+                class="px-3.5 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 {{ $statusFilter === 'accepted' ? 'bg-blue-600 text-white shadow-sm font-bold' : 'bg-brand-offwhite text-brand-charcoal hover:bg-brand-cream' }}"
+            >
+                <span>Accepted</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ $statusFilter === 'accepted' ? 'bg-white text-blue-800' : 'bg-white border border-brand-light-border' }}">{{ $counts['accepted'] ?? 0 }}</span>
             </a>
 
             <a 
@@ -118,13 +126,16 @@
                     
                     <!-- Left Thumbnail & Details -->
                     <div class="flex items-start gap-4 flex-grow min-w-0">
-                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border shadow-sm">
-                            <img 
-                                src="{{ $booking->decoration->safe_primary_image }}" 
-                                alt="{{ $booking->decoration->name }}" 
-                                class="w-full h-full object-cover"
-                                onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-                            />
+                        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border shadow-sm flex items-center justify-center">
+                            @if($booking->booked_item_image)
+                                <img 
+                                    src="{{ $booking->booked_item_image }}" 
+                                    alt="{{ $booking->booked_item_name }}" 
+                                    class="w-full h-full object-cover"
+                                />
+                            @else
+                                <i class="fas fa-camera text-brand-gold text-lg"></i>
+                            @endif
                         </div>
 
                         <div class="space-y-1.5 min-w-0 flex-grow">
@@ -135,6 +146,9 @@
                                 </span>
                                 <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border {{ $booking->status_badge_classes }}">
                                     {{ $booking->status_label }}
+                                </span>
+                                <span class="inline-block text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border {{ $booking->payment_status_badge_classes }}">
+                                    {{ $booking->payment_status_label }}
                                 </span>
                                 @if($booking->has_pending_cancellation)
                                     <span class="text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded-full">
@@ -149,7 +163,7 @@
                             </div>
 
                             <h3 class="font-serif text-base sm:text-lg font-bold text-brand-charcoal truncate">
-                                {{ $booking->decoration->name }}
+                                {{ $booking->booked_item_name }}
                             </h3>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-brand-muted-brown pt-0.5">

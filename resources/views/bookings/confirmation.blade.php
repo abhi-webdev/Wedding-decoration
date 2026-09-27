@@ -5,13 +5,6 @@
 
 @section('content')
 
-    <!-- 1. Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Decorations', 'url' => route('decorations.index')],
-        ['label' => $booking->decoration->name, 'url' => route('decorations.show', $booking->decoration->slug)],
-        ['label' => 'Booking Request #' . $booking->booking_reference, 'url' => '']
-    ]" />
-
     <!-- 2. Main Confirmation Section -->
     <section class="py-10 sm:py-16 bg-brand-cream relative">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -193,32 +186,27 @@
                 </div>
             @endauth
 
-            <!-- Actions Bar: WhatsApp & Return Buttons -->
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
-                <a 
-                    href="https://wa.me/919931200000?text={{ urlencode('Namaste Aditya Utsav! I have submitted booking request reference #' . $booking->booking_reference . ' for "' . $booking->decoration->name . '" on ' . $booking->formatted_event_date . '. Please confirm receipt.') }}" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    class="w-full sm:w-auto px-6 py-3 text-xs font-bold uppercase tracking-wider text-green-900 bg-green-100 hover:bg-green-200 rounded-xl border border-green-300 transition-all flex items-center justify-center gap-2 shadow-sm"
-                >
-                    <i class="fab fa-whatsapp text-green-600 text-base"></i>
-                    <span>Connect on WhatsApp with Reference ID</span>
+            <!-- Actions Bar: Primary Navigation & Contact Buttons -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <a href="{{ route('account.bookings.show', $booking->id) }}" class="w-full sm:w-auto px-6 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md hover:shadow-gold-glow transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-calendar-check text-brand-gold"></i>
+                    <span>View My Booking</span>
                 </a>
 
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <a 
-                        href="{{ route('decorations.show', $booking->decoration->slug) }}" 
-                        class="w-1/2 sm:w-auto px-4 py-2.5 text-xs font-semibold text-brand-charcoal bg-white hover:bg-brand-offwhite rounded-xl border border-brand-light-border transition-colors text-center"
-                    >
-                        View Decoration
-                    </a>
-                    <a 
-                        href="{{ route('decorations.index') }}" 
-                        class="w-1/2 sm:w-auto px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow transition-colors text-center"
-                    >
-                        Browse Catalog
-                    </a>
-                </div>
+                <a href="{{ route('account.dashboard') }}" class="w-full sm:w-auto px-6 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-charcoal bg-white hover:bg-brand-offwhite rounded-xl border border-brand-light-border shadow transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-user-circle text-brand-burgundy"></i>
+                    <span>Go To My Account</span>
+                </a>
+
+                <a 
+                    href="{{ \App\Services\NotificationService::getWhatsAppUrl('Namaste Aditya Utsav! I submitted booking request #' . $booking->booking_reference . ' for ' . $booking->booked_item_name . ' on ' . ($booking->formatted_event_date ?? $booking->event_date) . ' in ' . $booking->city . '. Please review.') }}" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    class="w-full sm:w-auto px-6 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-green-900 bg-green-100 hover:bg-green-200 rounded-xl border border-green-300 transition-all flex items-center justify-center gap-2 shadow-sm"
+                >
+                    <i class="fab fa-whatsapp text-green-600 text-base"></i>
+                    <span>Contact Aditya Utsav</span>
+                </a>
             </div>
 
         </div>

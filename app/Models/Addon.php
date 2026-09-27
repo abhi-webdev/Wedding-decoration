@@ -42,14 +42,27 @@ class Addon extends Model
         return $this->attributes['unit_label'] ?? 'per event';
     }
 
-    public function getSafeImageAttribute()
+    public function getSafeImageAttribute(): ?string
     {
-        if (!empty($this->image) && file_exists(public_path($this->image))) {
-            return asset($this->image);
+        $img = $this->image;
+        if (empty($img)) {
+            return null;
         }
-        if (!empty($this->image) && (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://'))) {
-            return $this->image;
+        if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+            return null;
         }
-        return asset('images/placeholders/decoration-placeholder.svg');
+        if (file_exists(public_path($img))) {
+            return asset($img);
+        }
+        if (file_exists(public_path('storage/' . $img))) {
+            return asset('storage/' . $img);
+        }
+        if (str_starts_with($img, 'uploads/')) {
+            return asset($img);
+        }
+        if (str_starts_with($img, 'storage/')) {
+            return asset($img);
+        }
+        return null;
     }
 }

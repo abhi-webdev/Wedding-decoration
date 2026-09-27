@@ -6,7 +6,7 @@
 
 <div class="space-y-6">
     
-    <!-- Top Header Bar with Breadcrumb back to My Bookings -->
+    <!-- Top Header Bar back to My Bookings -->
     <div class="flex items-center justify-between gap-4">
         <a href="{{ route('account.bookings') }}" class="inline-flex items-center gap-2 text-xs font-bold text-brand-burgundy hover:underline">
             <i class="fas fa-arrow-left text-[10px]"></i>
@@ -31,10 +31,16 @@
                     <span class="inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border {{ $booking->status_badge_classes }}">
                         {{ $booking->status_label }}
                     </span>
+                    <span class="inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full border {{ $booking->payment_status_badge_classes }}">
+                        {{ $booking->payment_status_label }}
+                    </span>
                 </div>
                 <h1 class="font-serif text-2xl sm:text-3xl font-bold text-brand-charcoal mt-1">
-                    {{ $booking->decoration->name }}
+                    {{ $booking->booked_item_name }}
                 </h1>
+                <span class="text-xs font-bold uppercase text-brand-gold tracking-wider block mt-0.5">
+                    {{ $booking->booked_item_type_label }}
+                </span>
             </div>
 
             <!-- Total Amount Card -->
@@ -75,25 +81,37 @@
         <!-- Two Columns: Left Image & Specs (7 cols), Right Inclusions & Cost (5 cols) -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
-            <!-- Left: Decoration Showcase & Event Specifications (7 cols) -->
+            <!-- Left: Showcase & Event Specifications (7 cols) -->
             <div class="lg:col-span-7 space-y-6">
                 
-                <!-- Decoration Snapshot -->
-                <div class="rounded-2xl overflow-hidden bg-brand-charcoal border border-brand-light-border shadow-md h-60 sm:h-72 relative group">
-                    <img 
-                        src="{{ $booking->decoration->safe_primary_image }}" 
-                        alt="{{ $booking->decoration->name }}" 
-                        class="w-full h-full object-cover"
-                        onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-                    />
+                <!-- Snapshot -->
+                <div class="rounded-2xl overflow-hidden bg-brand-charcoal border border-brand-light-border shadow-md h-60 sm:h-72 relative group flex items-center justify-center">
+                    @if($booking->booked_item_image)
+                        <img 
+                            src="{{ $booking->booked_item_image }}" 
+                            alt="{{ $booking->booked_item_name }}" 
+                            class="w-full h-full object-cover"
+                        />
+                    @else
+                        <div class="p-8 text-center text-white flex flex-col items-center justify-center">
+                            <i class="fas fa-camera text-brand-gold text-3xl mb-2"></i>
+                            <span class="font-serif text-lg font-bold">{{ $booking->booked_item_name }}</span>
+                        </div>
+                    @endif
                     <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
                     <div class="absolute bottom-3 left-4 right-4 text-white flex items-center justify-between">
                         <span class="text-xs font-bold text-brand-gold-light">
-                            {{ $booking->decoration->category->name ?? 'Wedding Decor' }} • {{ $booking->decoration->style ?? 'Traditional' }}
+                            {{ $booking->booked_item_type_label }} • {{ $booking->event_type ?? 'Wedding Event' }}
                         </span>
-                        <a href="{{ route('decorations.show', $booking->decoration->slug) }}" class="text-xs font-semibold text-white bg-black/50 hover:bg-black/80 px-2.5 py-1 rounded border border-white/20 transition-colors">
-                            View Catalog Design <i class="fas fa-external-link-alt text-[10px] ml-1"></i>
-                        </a>
+                        @if($booking->booking_type === 'package' && $booking->package)
+                            <a href="{{ route('packages.show', $booking->package->slug) }}" class="text-xs font-semibold text-white bg-black/50 hover:bg-black/80 px-2.5 py-1 rounded border border-white/20 transition-colors">
+                                View Package <i class="fas fa-external-link-alt text-[10px] ml-1"></i>
+                            </a>
+                        @elseif($booking->decoration)
+                            <a href="{{ route('decorations.show', $booking->decoration->slug) }}" class="text-xs font-semibold text-white bg-black/50 hover:bg-black/80 px-2.5 py-1 rounded border border-white/20 transition-colors">
+                                View Catalog Design <i class="fas fa-external-link-alt text-[10px] ml-1"></i>
+                            </a>
+                        @endif
                     </div>
                 </div>
 
@@ -138,6 +156,67 @@
                     </div>
                 </div>
 
+                <!-- Verified Payments & Receipts Section -->
+                <div class="p-5 rounded-2xl bg-white border border-brand-light-border shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-brand-light-border">
+                        <h3 class="font-serif text-sm font-bold text-brand-charcoal flex items-center gap-2">
+                            <i class="fas fa-receipt text-brand-gold"></i>
+                            Payments & Receipts
+                        </h3>
+                        @if(in_array($booking->status, ['accepted', 'confirmed', 'advance_paid', 'scheduled', 'quoted']) && $booking->balance_due > 0)
+                            <button type="button" onclick="document.getElementById('payment-modal').classList.remove('hidden')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
+                                + Make Payment
+                            </button>
+                        @endif
+                    </div>
+
+                    @if($booking->payments && $booking->payments->isNotEmpty())
+                        <div class="space-y-2.5 text-xs">
+                            @foreach($booking->payments as $payment)
+                                <div class="p-3 rounded-xl border border-brand-light-border bg-brand-offwhite flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-mono font-bold text-brand-charcoal">{{ $payment->payment_reference }}</span>
+                                            @if($payment->status === 'pending')
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-100 text-amber-800">
+                                                    Pending Verification
+                                                </span>
+                                            @elseif(in_array($payment->status, ['paid', 'accepted', 'successful']))
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                                                    Verified & Paid
+                                                </span>
+                                            @else
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-red-100 text-red-800">
+                                                    {{ $payment->status }}
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="text-[11px] text-brand-muted-brown mt-0.5">
+                                            Amount: <strong class="text-brand-burgundy font-bold">₹{{ number_format($payment->amount, 2) }}</strong> via {{ $payment->payment_method_label }} ({{ $payment->payment_date ? \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') : $payment->created_at->format('d M Y') }})
+                                            @if($payment->receipt_number)
+                                                | <span class="font-mono font-bold text-emerald-800">Receipt #{{ $payment->receipt_number }}</span>
+                                            @endif
+                                        </div>
+                                        @if($payment->rejection_reason)
+                                            <div class="text-[11px] text-rose-700 mt-1">
+                                                <strong>Note:</strong> {{ $payment->rejection_reason }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    @if(in_array($payment->status, ['paid', 'accepted', 'successful']))
+                                        <a href="{{ route('account.receipts.show', $payment->id) }}" target="_blank" class="px-3 py-1.5 bg-brand-burgundy hover:bg-brand-deep-burgundy text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1 shadow-sm">
+                                            <i class="fas fa-print text-brand-gold text-[10px]"></i>
+                                            View / Print Receipt
+                                        </a>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-xs text-brand-muted-brown italic py-1">No payment transactions submitted for this booking yet.</p>
+                    @endif
+                </div>
+
             </div>
 
             <!-- Right: Cost Calculation & Actions (5 cols) -->
@@ -146,12 +225,12 @@
                 <!-- Financial Breakdown -->
                 <div class="p-5 rounded-2xl bg-brand-offwhite border border-brand-light-border space-y-3 text-xs">
                     <h3 class="font-serif text-sm font-bold text-brand-charcoal uppercase tracking-wider pb-1 border-b border-brand-light-border/60">
-                        Pricing Estimate
+                        Payment & Pricing Summary
                     </h3>
 
                     <div class="space-y-2">
                         <div class="flex items-center justify-between text-brand-muted-brown">
-                            <span>Base Setup ({{ $booking->decoration->name }}):</span>
+                            <span>Base Price ({{ $booking->booked_item_name }}):</span>
                             <span class="font-semibold text-brand-charcoal">{{ $booking->formatted_base_amount }}</span>
                         </div>
 
@@ -171,35 +250,84 @@
                             </div>
                         @endif
 
-                        <div class="p-3.5 rounded-xl bg-gradient-to-br from-white to-brand-cream border border-brand-gold/40 flex items-baseline justify-between mt-3">
-                            <div>
-                                <span class="text-[10px] text-brand-muted-brown uppercase tracking-wider block font-bold">Estimated Total</span>
-                                <span class="font-serif text-2xl font-bold text-brand-burgundy">{{ $booking->formatted_estimated_total }}</span>
+                        <div class="pt-2 border-t border-brand-light-border space-y-1.5">
+                            <div class="flex items-center justify-between text-brand-charcoal font-bold text-sm">
+                                <span>Total Booking Amount:</span>
+                                <span class="font-serif text-lg text-brand-burgundy">{{ $booking->formatted_estimated_total }}</span>
                             </div>
-                            <span class="text-[10px] text-brand-burgundy bg-brand-offwhite px-2 py-0.5 rounded border border-brand-light-border font-semibold">
-                                Pending Quote
-                            </span>
+                            <div class="flex items-center justify-between text-emerald-800 font-bold">
+                                <span>Verified Paid Amount:</span>
+                                <span>₹{{ number_format($booking->total_paid, 2) }}</span>
+                            </div>
+                            @if($booking->pending_payment_amount > 0)
+                                <div class="flex items-center justify-between text-amber-800 font-semibold text-[11px]">
+                                    <span>Pending Verification:</span>
+                                    <span>₹{{ number_format($booking->pending_payment_amount, 2) }}</span>
+                                </div>
+                            @endif
+                            <div class="flex items-center justify-between text-rose-700 font-bold text-sm pt-1 border-t border-dashed border-brand-light-border">
+                                <span>Remaining Balance:</span>
+                                <span>₹{{ number_format($booking->balance_due, 2) }}</span>
+                            </div>
                         </div>
+
+                        <!-- Pay Button -->
+                        @if(in_array($booking->status, ['accepted', 'confirmed', 'advance_paid', 'scheduled', 'quoted']) && $booking->balance_due > 0)
+                            <div class="pt-3">
+                                <button 
+                                    type="button" 
+                                    onclick="document.getElementById('payment-modal').classList.remove('hidden')" 
+                                    class="w-full py-3 px-4 text-xs font-bold uppercase tracking-wider text-slate-950 bg-brand-gold hover:bg-brand-gold-light rounded-xl border border-white shadow-md hover:shadow-gold-glow transition-all flex items-center justify-center gap-2"
+                                >
+                                    <i class="fas fa-lock text-brand-burgundy"></i>
+                                    <span>Make Advance / Full Payment</span>
+                                </button>
+                            </div>
+                        @elseif($booking->balance_due <= 0 && $booking->effective_total > 0)
+                            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-center text-xs font-bold text-emerald-800 mt-2">
+                                ✓ Fully Paid & Settled
+                            </div>
+                        @endif
                     </div>
                 </div>
 
                 <!-- Booking Actions (Cancellation / Reschedule / WhatsApp) -->
                 <div class="p-5 rounded-2xl bg-white border border-brand-light-border space-y-3 text-xs shadow-sm">
-                    <h4 class="font-serif text-sm font-bold text-brand-charcoal">Booking Actions</h4>
+                    <h4 class="font-serif text-sm font-bold text-brand-charcoal">Support & Inquiries</h4>
                     
+                    @php
+                        $bizPhone = \App\Models\SiteSetting::get('business_phone', '+91 99312 00000');
+                        $bizWa = \App\Models\SiteSetting::get('business_whatsapp', '+91 99312 00000');
+                        $cleanBizWa = preg_replace('/[^0-9]/', '', $bizWa);
+                        if (strlen($cleanBizWa) === 10) $cleanBizWa = '91' . $cleanBizWa;
+                        $bizEmail = \App\Models\SiteSetting::get('business_email', 'contact@adityautsav.com');
+                        $waText = urlencode("Namaste Aditya Utsav! I have a question regarding my booking reference #" . $booking->booking_reference . " for \"" . $booking->booked_item_name . "\".");
+                    @endphp
+
                     <!-- WhatsApp Support -->
                     <a 
-                        href="https://wa.me/919931200000?text={{ urlencode('Namaste Aditya Utsav! I have a question regarding my booking reference #' . $booking->booking_reference . ' for "' . $booking->decoration->name . '".') }}" 
+                        href="https://wa.me/{{ $cleanBizWa }}?text={{ $waText }}" 
                         target="_blank" 
                         rel="noopener noreferrer"
                         class="w-full py-2.5 px-3 text-xs font-bold text-green-900 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-colors flex items-center justify-center gap-2"
                     >
                         <i class="fab fa-whatsapp text-green-600"></i>
-                        <span>Inquire on WhatsApp</span>
+                        <span>Contact on WhatsApp</span>
                     </a>
 
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="tel:{{ $bizPhone }}" class="py-2 px-3 bg-brand-offwhite hover:bg-brand-cream text-brand-charcoal font-semibold rounded-xl text-center text-xs border border-brand-light-border transition flex items-center justify-center gap-1">
+                            <i class="fas fa-phone-alt text-brand-gold text-[10px]"></i>
+                            <span>Call Us</span>
+                        </a>
+                        <a href="mailto:{{ $bizEmail }}" class="py-2 px-3 bg-brand-offwhite hover:bg-brand-cream text-brand-charcoal font-semibold rounded-xl text-center text-xs border border-brand-light-border transition flex items-center justify-center gap-1">
+                            <i class="fas fa-envelope text-brand-gold text-[10px]"></i>
+                            <span>Email Us</span>
+                        </a>
+                    </div>
+
                     <!-- Request Reschedule Trigger -->
-                    @if(in_array($booking->status, ['pending', 'quoted', 'confirmed', 'advance_paid']) && !$booking->has_pending_reschedule)
+                    @if(in_array($booking->status, ['pending', 'accepted', 'quoted', 'confirmed', 'advance_paid']) && !$booking->has_pending_reschedule)
                         <button 
                             type="button" 
                             onclick="document.getElementById('reschedule-modal').classList.remove('hidden')" 
@@ -211,7 +339,7 @@
                     @endif
 
                     <!-- Request Cancellation Trigger -->
-                    @if(in_array($booking->status, ['pending', 'quoted', 'confirmed', 'advance_paid', 'scheduled']) && !$booking->has_pending_cancellation)
+                    @if(in_array($booking->status, ['pending', 'accepted', 'quoted', 'confirmed', 'advance_paid', 'scheduled']) && !$booking->has_pending_cancellation)
                         <button 
                             type="button" 
                             onclick="document.getElementById('cancellation-modal').classList.remove('hidden')" 
@@ -442,5 +570,150 @@
 
     </div>
 </div>
+
+<!-- Modal 3: Submit Payment Request Modal -->
+<div id="payment-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 sm:p-8 border border-brand-light-border shadow-2xl space-y-5" onclick="event.stopPropagation()">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-brand-light-border">
+            <h3 class="font-serif text-lg font-bold text-brand-charcoal flex items-center gap-2">
+                <i class="fas fa-lock text-brand-gold"></i>
+                Submit Payment Request
+            </h3>
+            <button type="button" onclick="document.getElementById('payment-modal').classList.add('hidden')" class="text-gray-400 hover:text-brand-charcoal">
+                <i class="fas fa-times text-base"></i>
+            </button>
+        </div>
+
+        <div class="p-3 bg-brand-offwhite rounded-xl border border-brand-light-border flex items-center justify-between text-xs">
+            <div>
+                <span class="text-[10px] text-brand-muted-brown uppercase tracking-wider block">Remaining Balance:</span>
+                <span class="font-serif text-base font-bold text-rose-700">₹{{ number_format($booking->balance_due, 2) }}</span>
+            </div>
+            <div class="text-right">
+                <span class="text-[10px] text-brand-muted-brown uppercase tracking-wider block">Total Estimated:</span>
+                <span class="font-bold text-brand-charcoal">₹{{ number_format($booking->effective_total, 2) }}</span>
+            </div>
+        </div>
+
+        <form action="{{ route('account.payments.store') }}" method="POST" class="space-y-4">
+            @csrf
+            <input type="hidden" name="booking_id" value="{{ $booking->id }}">
+
+            <!-- Payment Type Selection (Advance vs Full) -->
+            <div class="space-y-1">
+                <label class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">Payment Option <span class="text-red-500">*</span></label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="opt-advance" onclick="setPaymentMode('advance', {{ min($booking->balance_due, max(5000, $booking->effective_total * 0.4)) }})" class="py-2 px-3 text-xs font-bold rounded-xl border border-brand-burgundy bg-brand-burgundy text-white transition">
+                        Pay Advance / Token
+                    </button>
+                    <button type="button" id="opt-full" onclick="setPaymentMode('full', {{ $booking->balance_due }})" class="py-2 px-3 text-xs font-bold rounded-xl border border-brand-light-border bg-brand-offwhite text-brand-charcoal hover:bg-brand-cream transition">
+                        Pay Full Balance
+                    </button>
+                </div>
+                <input type="hidden" name="payment_type" id="payment_type" value="advance">
+            </div>
+
+            <!-- Amount -->
+            <div class="space-y-1">
+                <label for="pay_amount" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                    Amount (₹) <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="number" 
+                    id="pay_amount" 
+                    name="amount" 
+                    min="1" 
+                    max="{{ $booking->balance_due }}" 
+                    value="{{ min($booking->balance_due, max(5000, round($booking->effective_total * 0.4))) }}" 
+                    required 
+                    class="w-full px-3.5 py-2 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal font-bold focus:outline-none focus:border-brand-burgundy font-mono"
+                />
+                <span class="text-[10px] text-brand-muted-brown">Max allowable: ₹{{ number_format($booking->balance_due, 2) }}</span>
+            </div>
+
+            <!-- Payment Method & Date -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="space-y-1">
+                    <label for="payment_method" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                        Payment Method <span class="text-red-500">*</span>
+                    </label>
+                    <select id="payment_method" name="payment_method" required class="w-full px-3.5 py-2 text-xs bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium">
+                        <option value="upi">UPI (GPay / PhonePe / Paytm)</option>
+                        <option value="bank_transfer">Bank Transfer (NEFT / IMPS / RTGS)</option>
+                        <option value="cash">Direct Cash at Office / Site</option>
+                        <option value="card">Debit / Credit Card</option>
+                        <option value="other">Other Method</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label for="payment_date" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                        Payment Date <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="payment_date" 
+                        name="payment_date" 
+                        value="{{ date('Y-m-d') }}" 
+                        max="{{ date('Y-m-d') }}" 
+                        required 
+                        class="w-full px-3.5 py-2 text-xs bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
+                    />
+                </div>
+            </div>
+
+            <!-- Transaction Reference -->
+            <div class="space-y-1">
+                <label for="transaction_reference" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                    Transaction / UPI Reference Number (UTR)
+                </label>
+                <input 
+                    type="text" 
+                    id="transaction_reference" 
+                    name="transaction_reference" 
+                    placeholder="e.g. 427819827391 or UPI Ref ID" 
+                    class="w-full px-3.5 py-2 text-xs bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal font-mono focus:outline-none focus:border-brand-burgundy"
+                />
+            </div>
+
+            <!-- Notes -->
+            <div class="space-y-1">
+                <label for="payment_notes" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+                    Notes (Optional)
+                </label>
+                <textarea id="payment_notes" name="notes" rows="2" placeholder="e.g. Transferred via Google Pay from Rahul Kumar..." class="w-full px-3.5 py-2 text-xs bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy"></textarea>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end gap-3">
+                <button type="button" onclick="document.getElementById('payment-modal').classList.add('hidden')" class="px-4 py-2 text-xs font-semibold text-brand-charcoal bg-brand-offwhite hover:bg-brand-cream rounded-xl border border-brand-light-border">
+                    Cancel
+                </button>
+                <button type="submit" class="px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-950 bg-brand-gold hover:bg-brand-gold-light rounded-xl border border-white shadow-md hover:shadow-gold-glow transition-all">
+                    Submit Payment Request
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+function setPaymentMode(mode, amount) {
+    document.getElementById('payment_type').value = mode;
+    document.getElementById('pay_amount').value = Math.round(amount);
+    
+    var btnAdv = document.getElementById('opt-advance');
+    var btnFull = document.getElementById('opt-full');
+    
+    if (mode === 'full') {
+        btnFull.className = 'py-2 px-3 text-xs font-bold rounded-xl border border-brand-burgundy bg-brand-burgundy text-white transition';
+        btnAdv.className = 'py-2 px-3 text-xs font-bold rounded-xl border border-brand-light-border bg-brand-offwhite text-brand-charcoal hover:bg-brand-cream transition';
+    } else {
+        btnAdv.className = 'py-2 px-3 text-xs font-bold rounded-xl border border-brand-burgundy bg-brand-burgundy text-white transition';
+        btnFull.className = 'py-2 px-3 text-xs font-bold rounded-xl border border-brand-light-border bg-brand-offwhite text-brand-charcoal hover:bg-brand-cream transition';
+    }
+}
+</script>
 
 @endsection

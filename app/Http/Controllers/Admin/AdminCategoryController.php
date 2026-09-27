@@ -65,7 +65,7 @@ class AdminCategoryController extends Controller
         $displayOrder = $validated['display_order'] ?? $validated['sort_order'] ?? (Category::count() + 1);
         $isFeatured = $request->boolean('is_featured', true) || $request->boolean('is_active', true);
 
-        $imageUrl = 'images/categories/mandap.jpg';
+        $imageUrl = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
             $fileName = 'cat_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
@@ -128,6 +128,7 @@ class AdminCategoryController extends Controller
             'is_featured' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
         ]);
 
         $slug = !empty($validated['slug']) ? Str::slug($validated['slug']) : $category->slug;
@@ -135,6 +136,15 @@ class AdminCategoryController extends Controller
         $isFeatured = $request->has('is_featured') ? $request->boolean('is_featured') : ($request->has('is_active') ? $request->boolean('is_active') : $category->is_featured);
 
         $imageUrl = $category->image_url;
+
+        // Handle explicit image removal
+        if ($request->boolean('remove_image')) {
+            if ($category->image_url && str_starts_with($category->image_url, 'uploads/categories/') && file_exists(public_path($category->image_url))) {
+                @unlink(public_path($category->image_url));
+            }
+            $imageUrl = null;
+        }
+
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
             $fileName = 'cat_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
@@ -177,6 +187,10 @@ class AdminCategoryController extends Controller
 
         if ($count > 0) {
             return redirect()->route('admin.categories.index')->with('error', "Cannot delete category '{$category->name}' because {$count} decorations depend on it. Please reassign or delete them first.");
+        }
+
+        if ($category->image_url && str_starts_with($category->image_url, 'uploads/categories/') && file_exists(public_path($category->image_url))) {
+            @unlink(public_path($category->image_url));
         }
 
         $name = $category->name;

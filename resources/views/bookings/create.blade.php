@@ -1,17 +1,17 @@
 @extends('layouts.app')
 
-@section('title', 'Book ' . $decorationModel->name . ' | Aditya Utsav Bihar')
-@section('meta_description', 'Submit a booking request for ' . $decorationModel->name . ' in ' . $decorationModel->location . '. Choose event date, location, custom add-ons, and get a fast quotation.')
+@php
+    $isPkg = ($bookingType ?? 'decoration') === 'package';
+    $itemName = $isPkg ? $packageModel->name : $decorationModel->name;
+    $itemTypeLabel = $isPkg ? 'Wedding Package' : 'Wedding Decoration';
+    $basePriceVal = $isPkg ? (float)$packageModel->price : (float)$decorationModel->actual_booking_price;
+    $defaultLocation = $isPkg ? 'Siwan' : ($decorationModel->location ?? 'Siwan');
+@endphp
+
+@section('title', 'Book ' . $itemName . ' | Aditya Utsav Bihar')
+@section('meta_description', 'Submit a booking request for ' . $itemName . '. Choose event date, location, custom add-ons, and get confirmed reservation.')
 
 @section('content')
-
-    <!-- 1. Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Decorations', 'url' => route('decorations.index')],
-        ['label' => $decorationModel->category->name, 'url' => route('decorations.category', $decorationModel->category->slug)],
-        ['label' => $decorationModel->name, 'url' => route('decorations.show', $decorationModel->slug)],
-        ['label' => 'Book Decoration', 'url' => '']
-    ]" />
 
     <!-- 2. Header Banner -->
     <section class="bg-gradient-to-r from-brand-deep-burgundy via-brand-burgundy to-brand-royal-rose text-white py-8 sm:py-12 border-b border-brand-gold relative overflow-hidden">
@@ -25,17 +25,17 @@
                         STEP-BY-STEP BOOKING REQUEST
                     </span>
                     <h1 class="font-serif text-2xl sm:text-4xl font-bold text-white mt-1">
-                        Book Your Wedding Decoration
+                        Book Your {{ $itemTypeLabel }}
                     </h1>
                     <p class="text-xs sm:text-sm text-brand-cream/80 mt-1 max-w-xl">
-                        Request reservation for <strong class="text-brand-gold-light">{{ $decorationModel->name }}</strong>. Our event managers in Siwan will verify slot availability and finalize your custom quote.
+                        Request reservation for <strong class="text-brand-gold-light">{{ $itemName }}</strong>. Our event managers in Siwan will verify slot availability and confirm your booking.
                     </p>
                 </div>
 
                 <!-- Step Counter Pill -->
                 <div class="bg-black/30 backdrop-blur-sm border border-brand-gold/40 rounded-xl px-4 py-2.5 self-start md:self-auto flex items-center gap-3 text-xs">
                     <span class="w-2.5 h-2.5 rounded-full bg-brand-gold animate-pulse"></span>
-                    <span class="text-brand-cream/90 font-medium">Status: <strong class="text-brand-gold-light">Request / No Upfront Payment</strong></span>
+                    <span class="text-brand-cream/90 font-medium">Status: <strong class="text-brand-gold-light">Request / Direct Verification</strong></span>
                 </div>
             </div>
         </div>
@@ -93,7 +93,7 @@
                             <div class="stepper-circle w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-brand-offwhite text-brand-muted-brown border border-brand-light-border transition-all">
                                 4
                             </div>
-                            <span class="stepper-label text-[11px] sm:text-xs text-brand-muted-brown">Details</span>
+                            <span class="stepper-label text-[11px] sm:text-xs text-brand-muted-brown">Account</span>
                         </li>
 
                         <!-- Step 5 -->
@@ -114,7 +114,13 @@
                 <div class="lg:col-span-7">
                     <form id="booking-request-form" action="{{ route('booking.store') }}" method="POST" class="bg-white rounded-2xl p-6 sm:p-8 border border-brand-light-border shadow-soft-luxury space-y-6">
                         @csrf
-                        <input type="hidden" name="decoration_id" id="form-decoration-id" value="{{ $decorationModel->id }}">
+                        <input type="hidden" name="booking_type" value="{{ $bookingType ?? 'decoration' }}">
+                        @if($decorationModel)
+                            <input type="hidden" name="decoration_id" id="form-decoration-id" value="{{ $decorationModel->id }}">
+                        @endif
+                        @if($packageModel)
+                            <input type="hidden" name="package_id" id="form-package-id" value="{{ $packageModel->id }}">
+                        @endif
                         
                         <!-- ================= STEP 1: EVENT DETAILS ================= -->
                         <div id="step-panel-1" class="step-panel space-y-6">
@@ -140,27 +146,31 @@
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy font-medium"
                                     onchange="updateLiveReviewSummary()"
                                 >
-                                    <option value="">Select Event Type...</option>
                                     @php
                                         $eventOptions = [
                                             'Wedding (Vivah)',
+                                            'Wedding & Vivah',
                                             'Jaimala (Varmala)',
+                                            'Jaimala / Varmala',
                                             'Wedding Mandap (Pheras)',
                                             'Haldi Ceremony',
-                                            'Mehendi Celebration',
+                                            'Mehendi Ceremony',
                                             'Sangeet & Musical Night',
+                                            'Sangeet Night',
                                             'Grand Wedding Reception',
+                                            'Reception',
                                             'Tilak & Sagai (Engagement)',
+                                            'Tilak / Sagai',
                                             'Baraat Swagat & Entrance',
+                                            'Complete Wedding Package',
+                                            'Complete Package',
                                             'Anniversary Celebration',
-                                            'Birthday Party',
-                                            'Baby Shower / Godh Bharai',
                                             'Other Religious / Cultural Event'
                                         ];
-                                        $currentEventType = old('event_type', $decorationModel->category->name ?? 'Wedding (Vivah)');
+                                        $currentEventType = old('event_type', $prefill['event_type'] ?? ($decorationModel->category->name ?? 'Wedding & Vivah'));
                                     @endphp
                                     @foreach($eventOptions as $opt)
-                                        <option value="{{ $opt }}" {{ (str_contains($opt, $currentEventType) || $opt === $currentEventType) ? 'selected' : '' }}>
+                                        <option value="{{ $opt }}" {{ ($opt === $currentEventType || str_contains($currentEventType, $opt)) ? 'selected' : '' }}>
                                             {{ $opt }}
                                         </option>
                                     @endforeach
@@ -181,7 +191,7 @@
                                         id="event_date" 
                                         name="event_date" 
                                         min="{{ date('Y-m-d') }}" 
-                                        value="{{ old('event_date') }}" 
+                                        value="{{ old('event_date', $prefill['event_date'] ?? date('Y-m-d', strtotime('+14 days'))) }}" 
                                         required 
                                         class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy font-medium"
                                         onchange="checkDateAvailability(this.value); updateLiveReviewSummary();"
@@ -239,7 +249,7 @@
                                         Expected Guests <span class="text-red-500">*</span>
                                     </label>
                                     <span class="text-[11px] text-brand-royal-rose font-medium">
-                                        Recommended: {{ $decorationModel->guest_capacity ?? '200-500 Guests' }}
+                                        Recommended: {{ $decorationModel->guest_capacity ?? ($packageModel->guest_capacity ?? '200-500 Guests') }}
                                     </span>
                                 </div>
                                 <input 
@@ -253,14 +263,10 @@
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     oninput="checkGuestCapacity(this.value); updateLiveReviewSummary();"
                                 />
-                                <div id="guest-capacity-warning" class="hidden text-[11px] text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                                    <i class="fas fa-exclamation-triangle mr-1 text-amber-600"></i>
-                                    <span>Note: This decoration is optimized for standard capacity. For large guest gatherings (800+), our team will expand the stage riser and lighting coverage accordingly.</span>
-                                </div>
                             </div>
 
                             <div class="pt-4 flex justify-end">
-                                <button type="button" onclick="validateAndGoToStep(2)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2">
+                                <button type="button" onclick="validateAndGoToStep(2)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2 cursor-pointer">
                                     <span>Proceed to Location</span>
                                     <i class="fas fa-arrow-right text-[11px] text-brand-gold"></i>
                                 </button>
@@ -279,7 +285,7 @@
                                 </p>
                             </div>
 
-                            <!-- State Selection (Bihar vs Nearby UP) -->
+                            <!-- State Selection -->
                             <div class="space-y-1.5">
                                 <label for="state" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
                                     State <span class="text-red-500">*</span>
@@ -291,7 +297,7 @@
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     onchange="updateLiveReviewSummary()"
                                 >
-                                    <option value="Bihar" {{ old('state') === 'Bihar' ? 'selected' : '' }}>Bihar</option>
+                                    <option value="Bihar" {{ old('state', 'Bihar') === 'Bihar' ? 'selected' : '' }}>Bihar</option>
                                     <option value="Uttar Pradesh" {{ old('state') === 'Uttar Pradesh' ? 'selected' : '' }}>Uttar Pradesh (Nearby)</option>
                                     <option value="Other" {{ old('state') === 'Other' ? 'selected' : '' }}>Other State</option>
                                 </select>
@@ -300,13 +306,13 @@
                             <!-- City with Quick Select Pill Buttons -->
                             <div class="space-y-2">
                                 <label for="city" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                                    City / Town <span class="text-red-500">*</span>
+                                    City / District <span class="text-red-500">*</span>
                                 </label>
                                 <input 
                                     type="text" 
                                     id="city" 
                                     name="city" 
-                                    value="{{ old('city', $decorationModel->location ?? 'Siwan') }}" 
+                                    value="{{ old('city', $prefill['city'] ?? $defaultLocation) }}" 
                                     required 
                                     placeholder="e.g. Siwan, Mairwa, Gopalganj, Chapra, Gorakhpur..."
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
@@ -319,7 +325,7 @@
                                     <div class="flex flex-wrap gap-1.5">
                                         <span class="text-[10px] font-bold text-brand-burgundy self-center mr-1">Bihar:</span>
                                         @foreach(['Siwan', 'Mairwa', 'Gopalganj', 'Chapra / Saran', 'Maharajganj'] as $bCity)
-                                            <button type="button" onclick="setCityState('{{ $bCity }}', 'Bihar')" class="px-2.5 py-1 text-[11px] bg-brand-offwhite hover:bg-brand-gold/20 border border-brand-light-border rounded-lg text-brand-charcoal transition-colors">
+                                            <button type="button" onclick="setCityState('{{ $bCity }}', 'Bihar')" class="px-2.5 py-1 text-[11px] bg-brand-offwhite hover:bg-brand-gold/20 border border-brand-light-border rounded-lg text-brand-charcoal transition-colors cursor-pointer">
                                                 {{ $bCity }}
                                             </button>
                                         @endforeach
@@ -327,7 +333,7 @@
                                     <div class="flex flex-wrap gap-1.5 pt-1">
                                         <span class="text-[10px] font-bold text-brand-royal-rose self-center mr-1">Nearby UP:</span>
                                         @foreach(['Gorakhpur', 'Deoria', 'Bhatpar Rani', 'Salempur'] as $upCity)
-                                            <button type="button" onclick="setCityState('{{ $upCity }}', 'Uttar Pradesh')" class="px-2.5 py-1 text-[11px] bg-brand-offwhite hover:bg-brand-gold/20 border border-brand-light-border rounded-lg text-brand-charcoal transition-colors">
+                                            <button type="button" onclick="setCityState('{{ $upCity }}', 'Uttar Pradesh')" class="px-2.5 py-1 text-[11px] bg-brand-offwhite hover:bg-brand-gold/20 border border-brand-light-border rounded-lg text-brand-charcoal transition-colors cursor-pointer">
                                                 {{ $upCity }}
                                             </button>
                                         @endforeach
@@ -363,7 +369,7 @@
                                         id="locality" 
                                         name="locality" 
                                         value="{{ old('locality') }}" 
-                                        placeholder="Near Gandhi Maidan / Bypass"
+                                        placeholder="Near Gandhi Maidan / Station Road"
                                         class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     />
                                 </div>
@@ -385,10 +391,10 @@
 
                             <!-- Step 2 Navigation Buttons -->
                             <div class="pt-4 flex items-center justify-between">
-                                <button type="button" onclick="goToStep(1)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl">
+                                <button type="button" onclick="goToStep(1)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl cursor-pointer">
                                     <i class="fas fa-arrow-left mr-1.5"></i> Back
                                 </button>
-                                <button type="button" onclick="validateAndGoToStep(3)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2">
+                                <button type="button" onclick="validateAndGoToStep(3)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2 cursor-pointer">
                                     <span>Proceed to Add-ons</span>
                                     <i class="fas fa-arrow-right text-[11px] text-brand-gold"></i>
                                 </button>
@@ -403,7 +409,7 @@
                                     Custom Add-ons &amp; Upgrades
                                 </h2>
                                 <p class="text-xs text-brand-muted-brown mt-0.5">
-                                    Select optional enhancements to customize your decoration setup.
+                                    Select optional enhancements to customize your setup.
                                 </p>
                             </div>
 
@@ -439,37 +445,37 @@
                                     </label>
                                 @empty
                                     <p class="text-xs text-brand-muted-brown italic">
-                                        No custom add-ons required for this setup. You can proceed directly.
+                                        No custom add-ons required. You can proceed directly.
                                     </p>
                                 @endforelse
                             </div>
 
                             <p class="text-[11px] text-brand-muted-brown bg-brand-offwhite p-3 rounded-lg border border-brand-light-border flex items-center gap-1.5">
                                 <i class="fas fa-shield-alt text-brand-gold"></i>
-                                Selected add-on prices will be recalculated by our server using certified pricing.
+                                Selected add-on prices are calculated by our server using certified pricing.
                             </p>
 
                             <!-- Step 3 Navigation Buttons -->
                             <div class="pt-4 flex items-center justify-between">
-                                <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl">
+                                <button type="button" onclick="goToStep(2)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl cursor-pointer">
                                     <i class="fas fa-arrow-left mr-1.5"></i> Back
                                 </button>
-                                <button type="button" onclick="goToStep(4)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2">
-                                    <span>Proceed to Contact Info</span>
+                                <button type="button" onclick="goToStep(4)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2 cursor-pointer">
+                                    <span>Proceed to Contact &amp; Account</span>
                                     <i class="fas fa-arrow-right text-[11px] text-brand-gold"></i>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- ================= STEP 4: CUSTOMER DETAILS ================= -->
+                        <!-- ================= STEP 4: CUSTOMER DETAILS & AUTO ACCOUNT ================= -->
                         <div id="step-panel-4" class="step-panel space-y-6 hidden">
                             <div class="border-b border-brand-light-border pb-3">
                                 <span class="text-xs font-bold uppercase tracking-wider text-brand-royal-rose">Step 4 of 5</span>
                                 <h2 class="font-serif text-xl sm:text-2xl font-bold text-brand-charcoal mt-0.5">
-                                    Your Contact Information
+                                    Contact &amp; Customer Account
                                 </h2>
                                 <p class="text-xs text-brand-muted-brown mt-0.5">
-                                    Where should we send your booking reference and quotation?
+                                    Enter your details to receive your booking reference, status updates, and quotation.
                                 </p>
                             </div>
 
@@ -482,9 +488,9 @@
                                     type="text" 
                                     id="customer_name" 
                                     name="customer_name" 
-                                    value="{{ old('customer_name', $authUser->name ?? '') }}" 
+                                    value="{{ old('customer_name', $prefill['name'] ?? ($authUser->name ?? '')) }}" 
                                     required 
-                                    placeholder="e.g. Ramesh Kumar Singh"
+                                    placeholder="e.g. Rahul Kumar Singh"
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     oninput="updateLiveReviewSummary()"
                                 />
@@ -500,13 +506,13 @@
                                         type="tel" 
                                         id="customer_phone" 
                                         name="customer_phone" 
-                                        value="{{ old('customer_phone', $authUser->phone ?? '') }}" 
+                                        value="{{ old('customer_phone', $prefill['phone'] ?? ($authUser->phone ?? '')) }}" 
                                         required 
                                         placeholder="e.g. 9876543210"
                                         class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                         oninput="updateLiveReviewSummary()"
                                     />
-                                    <span class="text-[10px] text-brand-muted-brown">For immediate call &amp; SMS confirmation</span>
+                                    <span class="text-[10px] text-brand-muted-brown">For direct manager calls &amp; confirmation</span>
                                 </div>
 
                                 <div class="space-y-1.5">
@@ -517,40 +523,52 @@
                                         type="tel" 
                                         id="whatsapp_number" 
                                         name="whatsapp_number" 
-                                        value="{{ old('whatsapp_number', $authUser->whatsapp ?? '') }}" 
+                                        value="{{ old('whatsapp_number', $prefill['phone'] ?? ($authUser->whatsapp ?? '')) }}" 
                                         placeholder="e.g. 9876543210"
                                         class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     />
-                                    <span class="text-[10px] text-brand-muted-brown">To receive photos &amp; digital invoice</span>
+                                    <span class="text-[10px] text-brand-muted-brown">To receive photos &amp; digital receipts</span>
                                 </div>
                             </div>
 
-                            <!-- Email Address -->
+                            <!-- Email Address (Required for automatic account creation) -->
                             <div class="space-y-1.5">
                                 <label for="customer_email" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                                    Email Address (Optional)
+                                    Email Address <span class="text-red-500">*</span>
                                 </label>
                                 <input 
                                     type="email" 
                                     id="customer_email" 
                                     name="customer_email" 
                                     value="{{ old('customer_email', $authUser->email ?? '') }}" 
-                                    placeholder="name@example.com"
+                                    required
+                                    placeholder="customer@example.com"
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-medium"
                                     oninput="updateLiveReviewSummary()"
                                 />
                             </div>
 
+                            <!-- Automatic Account Notice -->
+                            <div class="p-4 rounded-xl bg-brand-cream/80 border border-brand-gold/40 text-xs text-brand-charcoal space-y-1.5">
+                                <div class="font-bold flex items-center gap-2 text-brand-burgundy">
+                                    <i class="fas fa-user-shield text-brand-gold"></i>
+                                    <span>Automatic Customer Account &amp; Portal Access</span>
+                                </div>
+                                <p class="text-[11px] leading-relaxed text-brand-muted-brown">
+                                    If you do not already have an account, a customer account will be automatically created. A secure temporary login password and booking reference will be emailed to your address. You can log in anytime to track booking status, view receipts, and make payments.
+                                </p>
+                            </div>
+
                             <!-- Special Requirements -->
                             <div class="space-y-1.5">
                                 <label for="special_requirements" class="block text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-                                    Special Decoration Requests / Venue Notes (Optional)
+                                    Special Requirements / Decoration Preferences (Optional)
                                 </label>
                                 <textarea 
                                     id="special_requirements" 
                                     name="special_requirements" 
                                     rows="3" 
-                                    placeholder="Tell us about custom flower color choices, stage height, lighting preferences, or specific family rituals..."
+                                    placeholder="Tell us about custom flower color choices, stage height, lighting preferences, or specific rituals..."
                                     class="w-full px-3.5 py-2.5 text-sm bg-brand-offwhite border border-brand-light-border rounded-xl text-brand-charcoal focus:outline-none focus:border-brand-burgundy font-normal leading-relaxed"
                                     oninput="updateLiveReviewSummary()"
                                 >{{ old('special_requirements') }}</textarea>
@@ -558,10 +576,10 @@
 
                             <!-- Step 4 Navigation Buttons -->
                             <div class="pt-4 flex items-center justify-between">
-                                <button type="button" onclick="goToStep(3)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl">
+                                <button type="button" onclick="goToStep(3)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl cursor-pointer">
                                     <i class="fas fa-arrow-left mr-1.5"></i> Back
                                 </button>
-                                <button type="button" onclick="validateAndGoToStep(5)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2">
+                                <button type="button" onclick="validateAndGoToStep(5)" class="px-6 py-3 text-xs font-bold uppercase tracking-wider text-white bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md flex items-center gap-2 cursor-pointer">
                                     <span>Review Booking Request</span>
                                     <i class="fas fa-arrow-right text-[11px] text-brand-gold"></i>
                                 </button>
@@ -580,14 +598,14 @@
                                 </p>
                             </div>
 
-                            <!-- Review Sections Grid with Quick Edit Buttons -->
+                            <!-- Review Sections Grid -->
                             <div class="space-y-4 text-xs">
                                 
                                 <!-- 1. Event Schedule Review -->
                                 <div class="p-4 rounded-xl bg-brand-offwhite border border-brand-light-border space-y-2">
                                     <div class="flex items-center justify-between pb-1 border-b border-brand-light-border/60">
                                         <strong class="font-bold text-brand-charcoal uppercase tracking-wider">1. Event Schedule</strong>
-                                        <button type="button" onclick="goToStep(1)" class="text-xs font-bold text-brand-burgundy hover:underline">
+                                        <button type="button" onclick="goToStep(1)" class="text-xs font-bold text-brand-burgundy hover:underline cursor-pointer">
                                             <i class="fas fa-edit mr-0.5"></i> Edit
                                         </button>
                                     </div>
@@ -603,7 +621,7 @@
                                 <div class="p-4 rounded-xl bg-brand-offwhite border border-brand-light-border space-y-2">
                                     <div class="flex items-center justify-between pb-1 border-b border-brand-light-border/60">
                                         <strong class="font-bold text-brand-charcoal uppercase tracking-wider">2. Venue Location</strong>
-                                        <button type="button" onclick="goToStep(2)" class="text-xs font-bold text-brand-burgundy hover:underline">
+                                        <button type="button" onclick="goToStep(2)" class="text-xs font-bold text-brand-burgundy hover:underline cursor-pointer">
                                             <i class="fas fa-edit mr-0.5"></i> Edit
                                         </button>
                                     </div>
@@ -617,7 +635,7 @@
                                 <div class="p-4 rounded-xl bg-brand-offwhite border border-brand-light-border space-y-2">
                                     <div class="flex items-center justify-between pb-1 border-b border-brand-light-border/60">
                                         <strong class="font-bold text-brand-charcoal uppercase tracking-wider">3. Selected Add-ons</strong>
-                                        <button type="button" onclick="goToStep(3)" class="text-xs font-bold text-brand-burgundy hover:underline">
+                                        <button type="button" onclick="goToStep(3)" class="text-xs font-bold text-brand-burgundy hover:underline cursor-pointer">
                                             <i class="fas fa-edit mr-0.5"></i> Edit
                                         </button>
                                     </div>
@@ -629,15 +647,15 @@
                                 <!-- 4. Customer Info Review -->
                                 <div class="p-4 rounded-xl bg-brand-offwhite border border-brand-light-border space-y-2">
                                     <div class="flex items-center justify-between pb-1 border-b border-brand-light-border/60">
-                                        <strong class="font-bold text-brand-charcoal uppercase tracking-wider">4. Contact Info</strong>
-                                        <button type="button" onclick="goToStep(4)" class="text-xs font-bold text-brand-burgundy hover:underline">
+                                        <strong class="font-bold text-brand-charcoal uppercase tracking-wider">4. Contact &amp; Account</strong>
+                                        <button type="button" onclick="goToStep(4)" class="text-xs font-bold text-brand-burgundy hover:underline cursor-pointer">
                                             <i class="fas fa-edit mr-0.5"></i> Edit
                                         </button>
                                     </div>
                                     <div class="grid grid-cols-2 gap-2 text-brand-muted-brown">
                                         <div>Name: <strong class="text-brand-charcoal block" id="rev-customer-name">-</strong></div>
                                         <div>Phone: <strong class="text-brand-charcoal block" id="rev-customer-phone">-</strong></div>
-                                        <div class="col-span-2">Email: <strong class="text-brand-charcoal" id="rev-customer-email">None provided</strong></div>
+                                        <div class="col-span-2">Login Email: <strong class="text-brand-burgundy block" id="rev-customer-email">-</strong></div>
                                     </div>
                                 </div>
 
@@ -647,23 +665,23 @@
                             <div class="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
                                 <div class="font-bold flex items-center gap-1.5 text-amber-950">
                                     <i class="fas fa-info-circle text-amber-600"></i>
-                                    Important: This is a Booking Request (Pending Confirmation)
+                                    Important: Booking Request Lifecycle
                                 </div>
                                 <p class="leading-relaxed text-[11px] text-amber-800">
-                                    Submitting this form does not require online payment. Our local team in Siwan will verify the date slot, confirm venue logistics, and send you an official quotation within 2–4 hours.
+                                    Submitting this form initiates your booking request (Status: <strong>Pending</strong>). Our team in Siwan will review the request and accept it. Once accepted, you will receive a notification and can submit your token advance to formalize the reservation.
                                 </p>
                             </div>
 
                             <!-- Step 5 Submit & Navigation Buttons -->
                             <div class="pt-4 flex items-center justify-between gap-4">
-                                <button type="button" onclick="goToStep(4)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl">
+                                <button type="button" onclick="goToStep(4)" class="px-5 py-2.5 text-xs font-semibold text-brand-charcoal hover:bg-brand-offwhite border border-brand-light-border rounded-xl cursor-pointer">
                                     <i class="fas fa-arrow-left mr-1.5"></i> Back
                                 </button>
                                 
                                 <button 
                                     type="submit" 
                                     id="submit-booking-btn" 
-                                    class="w-full sm:w-auto px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md hover:shadow-gold-glow transition-all flex items-center justify-center gap-2"
+                                    class="w-full sm:w-auto px-8 py-3.5 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-xl border border-brand-gold shadow-md hover:shadow-gold-glow transition-all flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <i class="fas fa-check-circle text-brand-gold text-base"></i>
                                     <span id="submit-btn-label">Submit Booking Request</span>
@@ -675,9 +693,9 @@
                     </form>
                 </div>
 
-                <!-- Right: Sticky Live Price & Decoration Summary Component (5 cols) -->
+                <!-- Right: Sticky Live Price Summary Component (5 cols) -->
                 <aside class="lg:col-span-5 sticky top-24 space-y-6">
-                    <x-booking-summary :decoration="$decorationModel" />
+                    <x-booking-summary :decoration="$decorationModel" :package="$packageModel" />
                     
                     <!-- Direct Help Box -->
                     <div class="bg-brand-cream/80 rounded-2xl p-5 border border-brand-light-border text-xs space-y-3">
@@ -689,7 +707,7 @@
                             Have specific auspicious timings (Muhurat) or need a multi-ritual package across Siwan, Chapra, or Gorakhpur?
                         </p>
                         <a 
-                            href="https://wa.me/919931200000?text={{ urlencode('Namaste Aditya Utsav! I have a question regarding booking "' . $decorationModel->name . '".') }}" 
+                            href="{{ \App\Services\NotificationService::getWhatsAppUrl('Namaste Aditya Utsav! I have a question regarding booking "' . $itemName . '".') }}" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             class="inline-flex items-center justify-center w-full py-2 px-3 text-xs font-bold text-green-800 bg-green-50 hover:bg-green-100 rounded-xl border border-green-200 transition-colors gap-2"
@@ -707,9 +725,9 @@
 
     <!-- Vanilla JavaScript for Multi-Step Form Logic, AJAX Availability & Live Price Calculation -->
     <script>
-        const BASE_DECORATION_PRICE = {{ $decorationModel->actual_booking_price }};
-        const DECORATION_ID = {{ $decorationModel->id }};
-        const RECOMMENDED_CAPACITY = 500;
+        const BASE_PRICE = {{ $basePriceVal }};
+        const BOOKING_TYPE = '{{ $bookingType ?? 'decoration' }}';
+        const ITEM_ID = {{ $isPkg ? $packageModel->id : $decorationModel->id }};
 
         let currentStep = 1;
 
@@ -809,6 +827,7 @@
             if (currentStep === 4 && targetStep > 4) {
                 const name = document.getElementById('customer_name').value.trim();
                 const phone = document.getElementById('customer_phone').value.trim();
+                const email = document.getElementById('customer_email').value.trim();
 
                 if (!name) {
                     alert('Please enter your full name.');
@@ -816,8 +835,13 @@
                     return;
                 }
                 if (!phone || phone.length < 10) {
-                    alert('Please enter a valid 10-digit mobile number.');
+                    alert('Please enter a valid mobile number.');
                     document.getElementById('customer_phone').focus();
+                    return;
+                }
+                if (!email || !email.includes('@')) {
+                    alert('Please enter a valid email address to receive your booking credentials.');
+                    document.getElementById('customer_email').focus();
                     return;
                 }
             }
@@ -845,7 +869,7 @@
                 selectedItems.push({ name, price });
             });
 
-            const grandTotal = BASE_DECORATION_PRICE + addonsTotal;
+            const grandTotal = BASE_PRICE + addonsTotal;
 
             // Update Sticky Summary UI
             const subtotalEl = document.getElementById('summary-addons-subtotal');
@@ -887,12 +911,12 @@
                         </div>
                     `;
                 } else {
-                    revAddonsList.innerHTML = '<span class="italic text-gray-500">No add-ons selected (Base decoration only).</span>';
+                    revAddonsList.innerHTML = '<span class="italic text-gray-500">No add-ons selected (Base price only).</span>';
                 }
             }
         }
 
-        // Live Date Availability Check via AJAX (Vanilla JS Fetch)
+        // Live Date Availability Check via AJAX
         function checkDateAvailability(dateVal) {
             if (!dateVal) return;
 
@@ -907,7 +931,11 @@
             msgEl.textContent = 'Connecting with Aditya Utsav booking calendar...';
             feedbackEl.classList.remove('hidden');
 
-            fetch(`{{ route('booking.checkAvailability') }}?decoration_id=${DECORATION_ID}&event_date=${encodeURIComponent(dateVal)}`)
+            const endpoint = (BOOKING_TYPE === 'decoration') 
+                ? `{{ route('booking.checkAvailability') }}?decoration_id=${ITEM_ID}&event_date=${encodeURIComponent(dateVal)}`
+                : `{{ route('booking.checkAvailability') }}?event_date=${encodeURIComponent(dateVal)}`;
+
+            fetch(endpoint)
                 .then(res => res.json())
                 .then(data => {
                     if (data.available && data.status === 'available') {
@@ -931,17 +959,9 @@
                 });
         }
 
-        // Guest Capacity Warning Helper
+        // Guest Capacity Helper
         function checkGuestCapacity(val) {
-            const num = parseInt(val) || 0;
-            const warnEl = document.getElementById('guest-capacity-warning');
-            if (warnEl) {
-                if (num > 700) {
-                    warnEl.classList.remove('hidden');
-                } else {
-                    warnEl.classList.add('hidden');
-                }
-            }
+            // Optional capacity notifications
         }
 
         // Update Live Review Step text

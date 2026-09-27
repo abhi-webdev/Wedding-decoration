@@ -43,15 +43,27 @@ class AdminAddonController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|string|max:500',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'is_active' => 'nullable|boolean',
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $file = $request->file('image');
+            $fileName = 'addon_' . time() . '_' . \Illuminate\Support\Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $destPath = public_path('uploads/addons');
+            if (!file_exists($destPath)) {
+                mkdir($destPath, 0755, true);
+            }
+            $file->move($destPath, $fileName);
+            $imagePath = 'uploads/addons/' . $fileName;
+        }
 
         $addon = Addon::create([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
-            'image' => $validated['image'] ?? null,
+            'image' => $imagePath,
             'is_active' => $request->boolean('is_active', true),
         ]);
 
@@ -85,15 +97,41 @@ class AdminAddonController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
-            'image' => 'nullable|string|max:500',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
         ]);
+
+        $imagePath = $addon->image;
+
+        if ($request->boolean('remove_image')) {
+            if ($addon->image && str_starts_with($addon->image, 'uploads/addons/') && file_exists(public_path($addon->image))) {
+                @unlink(public_path($addon->image));
+            }
+            $imagePath = null;
+        }
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $file = $request->file('image');
+            $fileName = 'addon_' . time() . '_' . \Illuminate\Support\Str::random(6) . '.' . $file->getClientOriginalExtension();
+            $destPath = public_path('uploads/addons');
+            if (!file_exists($destPath)) {
+                mkdir($destPath, 0755, true);
+            }
+            $file->move($destPath, $fileName);
+            $imagePath = 'uploads/addons/' . $fileName;
+
+            // Delete old upload
+            if ($addon->image && str_starts_with($addon->image, 'uploads/addons/') && file_exists(public_path($addon->image))) {
+                @unlink(public_path($addon->image));
+            }
+        }
 
         $addon->update([
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'price' => $validated['price'],
-            'image' => $validated['image'] ?? $addon->image,
+            'image' => $imagePath,
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : $addon->is_active,
         ]);
 
@@ -111,6 +149,11 @@ class AdminAddonController extends Controller
     {
         $addon = Addon::findOrFail($id);
         $name = $addon->name;
+
+        if ($addon->image && str_starts_with($addon->image, 'uploads/addons/') && file_exists(public_path($addon->image))) {
+            @unlink(public_path($addon->image));
+        }
+
         $addon->delete();
 
         AdminActivityLog::log(

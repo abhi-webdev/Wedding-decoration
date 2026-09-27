@@ -85,7 +85,7 @@ class AdminPackageController extends Controller
         $startingPrice = $validated['starting_price'] ?? $basePrice;
         $discountPrice = $validated['discount_price'] ?? ($validated['price'] ?? null);
 
-        $imagePath = 'images/packages/royal-bihar.jpg';
+        $imagePath = null;
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
             $fileName = 'pkg_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
@@ -163,6 +163,7 @@ class AdminPackageController extends Controller
             'guest_capacity' => 'nullable|string|max:100',
             'duration' => 'nullable|string|max:100',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'remove_image' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
             'is_featured' => 'nullable|boolean',
             'display_order' => 'nullable|integer',
@@ -175,6 +176,15 @@ class AdminPackageController extends Controller
         $discountPrice = $validated['discount_price'] ?? ($validated['price'] ?? $package->discount_price);
 
         $imagePath = $package->image ?: $package->image_url;
+
+        // Handle explicit image removal
+        if ($request->boolean('remove_image')) {
+            if ($package->image && str_starts_with($package->image, 'uploads/packages/') && file_exists(public_path($package->image))) {
+                @unlink(public_path($package->image));
+            }
+            $imagePath = null;
+        }
+
         if ($request->hasFile('image') && $request->file('image')->isValid()) {
             $file = $request->file('image');
             $fileName = 'pkg_' . time() . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
@@ -228,6 +238,11 @@ class AdminPackageController extends Controller
     {
         $package = Package::findOrFail($id);
         $name = $package->name;
+
+        if ($package->image && str_starts_with($package->image, 'uploads/packages/') && file_exists(public_path($package->image))) {
+            @unlink(public_path($package->image));
+        }
+
         $package->decorations()->detach();
         $package->delete();
 

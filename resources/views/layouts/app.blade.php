@@ -17,15 +17,23 @@
     <meta property="og:description" content="@yield('og_description', 'Make your wedding celebration beautiful with authentic traditional and royal decoration setups across Siwan, Bihar and nearby regions.')">
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="@yield('og_image', asset('images/logo/aditya-utsav-logo.svg'))">
+    @php
+        $siteLogo = \App\Models\SiteSetting::getSafeImage('site_logo');
+        $siteFavicon = \App\Models\SiteSetting::getSafeImage('site_favicon');
+    @endphp
+    @if($siteLogo)
+        <meta property="og:image" content="@yield('og_image', $siteLogo)">
+        <meta name="twitter:image" content="@yield('og_image', $siteLogo)">
+    @endif
     
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', 'Aditya Utsav | Bihar Wedding Decoration & Event Services')">
     <meta name="twitter:description" content="@yield('og_description', 'Make your wedding celebration beautiful with authentic traditional and royal decoration setups across Siwan, Bihar and nearby regions.')">
-    <meta name="twitter:image" content="@yield('og_image', asset('images/logo/aditya-utsav-logo.svg'))">
     
-    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo/aditya-utsav-logo.svg') }}">
+    @if($siteFavicon)
+        <link rel="icon" href="{{ $siteFavicon }}">
+    @endif
 
     <!-- Structured Data (JSON-LD) for Local Business -->
     <script type="application/ld+json">
@@ -347,26 +355,6 @@
         // Initialize UI states on DOM load
         document.addEventListener('DOMContentLoaded', () => {
             Wishlist.updateUI();
-
-            // Quick availability checker form handling (Hero & Modal)
-            const heroCheckerForm = document.getElementById('hero-checker-form');
-            if (heroCheckerForm) {
-                heroCheckerForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    const eventType = document.getElementById('hero_event_type')?.value || 'Wedding';
-                    const city = document.getElementById('hero_city')?.value || 'Siwan';
-                    const date = document.getElementById('hero_event_date')?.value;
-                    
-                    if (!date) {
-                        showToast('Please select your wedding/ceremony date.', 'info');
-                        return;
-                    }
-
-                    // Show success confirmation toast and open prefilled modal for details
-                    showToast(`Dates currently open for ${eventType} in ${city}!`, 'success');
-                    openAvailabilityModal(eventType, city);
-                });
-            }
         });
     </script>
 

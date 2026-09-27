@@ -5,24 +5,128 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Booking;
 use App\Models\BookingAddon;
 use App\Models\BookingStatusHistory;
 use App\Models\Decoration;
+use App\Models\Package;
 use App\Models\Addon;
+use App\Models\User;
 use App\Models\ServiceArea;
 use App\Models\SiteSetting;
+use App\Services\NotificationService;
 
 class BookingController extends Controller
 {
     /**
-     * Show the multi-step booking request form for a selected decoration.
+     * Show available decorations and packages after checking date availability.
      */
-    public function create($decoration)
+    public function availabilityResults(Request $request)
     {
-        // Support either slug or ID for flexible routing
+        $eventType = $request->input('event_type', 'Wedding & Vivah');
+        $city = $request->input('city', 'Siwan');
+        $eventDate = $request->input('event_date', Carbon::today()->addDays(14)->format('Y-m-d'));
+        $phone = $request->input('phone', '');
+        $name = $request->input('name', '');
+
+        // Check date validity
+        try {
+            $parsedDate = Carbon::parse($eventDate);
+            if ($parsedDate->isPast() && !$parsedDate->isToday()) {
+                $eventDate = Carbon::today()->format('Y-m-d');
+                $parsedDate = Carbon::today();
+            }
+        } catch (\Throwable $e) {
+            $parsedDate = Carbon::today()->addDays(14);
+            $eventDate = $parsedDate->format('Y-m-d');
+        }
+
+        // Check conflicting confirmed bookings on this date
+        $blockingStatuses = ['confirmed', 'advance_paid', 'scheduled'];
+        $conflictCount = Booking::where('event_date', $eventDate)
+            ->whereIn('status', $blockingStatuses)
+            ->count();
+
+        $isDateAvailable = ($conflictCount < 5); // Aditya Utsav handles up to 5 concurrent setups across Bihar/UP
+
+        // Retrieve active decorations from database
+        $decorationsQuery = Decoration::with(['category', 'images'])
+            ->where('is_active', true);
+
+        // Prioritize matching category if relevant
+        $decorations = $decorationsQuery->orderBy('display_order', 'asc')->get();
+
+        // Retrieve active packages from database
+        $packages = Package::where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->get();
+
+        $settings = SiteSetting::all()->pluck('value', 'key');
+
+        return view('bookings.availability_results', compact(
+            'eventType',
+            'city',
+            'eventDate',
+            'parsedDate',
+            'phone',
+            'name',
+            'isDateAvailable',
+            'conflictCount',
+            'decorations',
+            'packages',
+            'settings'
+        ));
+    }
+
+    /**
+     * Endpoint to check date availability. Supports both JSON AJAX and form redirection.
+     */
+    public function checkAvailability(Request $request)
+    {
+        if ($request->wantsJson() || $request->ajax()) {
+            $decorationId = $request->input('decoration_id');
+            $eventDate = $request->input('event_date', date('Y-m-d'));
+
+            if ($decorationId) {
+                $blockingStatuses = ['confirmed', 'advance_paid', 'scheduled'];
+                $isBlocked = Booking::where('decoration_id', $decorationId)
+                    ->where('event_date', $eventDate)
+                    ->whereIn('status', $blockingStatuses)
+                    ->exists();
+
+                if ($isBlocked) {
+                    return response()->json([
+                        'available' => false,
+                        'status' => 'booked',
+                        'badge' => 'Already Booked',
+                        'badge_class' => 'bg-rose-100 text-rose-800 border-rose-300',
+                        'message' => 'This decoration is booked for the selected date. Please choose another date or explore our alternative setups.'
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'available' => true,
+                'status' => 'available',
+                'badge' => 'Available For Booking',
+                'badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+                'message' => 'Your wedding date is available! Redirecting to available decoration setups...',
+                'redirect_url' => route('booking.availability', $request->all())
+            ]);
+        }
+
+        // Direct form submission: redirect to availability results page
+        return redirect()->route('booking.availability', $request->all());
+    }
+
+    /**
+     * Show booking request form for a selected decoration.
+     */
+    public function create($decoration, Request $request)
+    {
         $decorationModel = Decoration::with(['category', 'images', 'addons', 'items'])
             ->where(function ($q) use ($decoration) {
                 if (is_numeric($decoration)) {
@@ -34,13 +138,11 @@ class BookingController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        // Get available add-ons for this decoration or active global add-ons
         $addons = $decorationModel->addons;
         if ($addons->isEmpty()) {
             $addons = Addon::where('is_active', true)->orderBy('price', 'asc')->get();
         }
 
-        // Service locations
         $biharLocations = ServiceArea::where('category', 'Bihar Core')
             ->orWhere('category', 'Bihar Extended')
             ->orderBy('display_order')
@@ -52,79 +154,79 @@ class BookingController extends Controller
 
         $authUser = Auth::user();
         $settings = SiteSetting::all()->pluck('value', 'key');
+        $prefill = $request->query();
+        $bookingType = 'decoration';
+        $packageModel = null;
 
         return view('bookings.create', compact(
             'decorationModel',
+            'packageModel',
+            'bookingType',
             'addons',
             'biharLocations',
             'upLocations',
             'authUser',
-            'settings'
+            'settings',
+            'prefill'
         ));
     }
 
     /**
-     * AJAX endpoint to check date availability for a given decoration.
-     * Uses Vanilla JS fetch(), returns JSON.
+     * Show booking request form for a selected package.
      */
-    public function checkAvailability(Request $request)
+    public function createPackage($package, Request $request)
     {
-        $validated = $request->validate([
-            'decoration_id' => 'required|exists:decorations,id',
-            'event_date' => 'required|date|after_or_equal:today',
-        ]);
+        $packageModel = Package::with(['decorations.category', 'decorations.images'])
+            ->where(function ($q) use ($package) {
+                if (is_numeric($package)) {
+                    $q->where('id', $package);
+                } else {
+                    $q->where('slug', $package);
+                }
+            })
+            ->where('is_active', true)
+            ->firstOrFail();
 
-        $decorationId = $validated['decoration_id'];
-        $eventDate = Carbon::parse($validated['event_date'])->format('Y-m-d');
+        $addons = Addon::where('is_active', true)->orderBy('price', 'asc')->get();
 
-        // Check conflicting bookings
-        $blockingStatuses = ['confirmed', 'advance_paid', 'scheduled', 'quoted'];
-        $isBlocked = Booking::where('decoration_id', $decorationId)
-            ->where('event_date', $eventDate)
-            ->whereIn('status', $blockingStatuses)
-            ->exists();
+        $biharLocations = ServiceArea::where('category', 'Bihar Core')
+            ->orWhere('category', 'Bihar Extended')
+            ->orderBy('display_order')
+            ->get();
 
-        if ($isBlocked) {
-            return response()->json([
-                'available' => false,
-                'status' => 'booked',
-                'badge' => 'Already Booked',
-                'badge_class' => 'bg-rose-100 text-rose-800 border-rose-300',
-                'message' => 'This decoration is already booked or scheduled for the selected date. Please choose another date or contact our team for custom alternative setups.'
-            ]);
-        }
+        $upLocations = ServiceArea::where('category', 'Nearby Uttar Pradesh')
+            ->orderBy('display_order')
+            ->get();
 
-        $hasPending = Booking::where('decoration_id', $decorationId)
-            ->where('event_date', $eventDate)
-            ->where('status', 'pending')
-            ->exists();
+        $authUser = Auth::user();
+        $settings = SiteSetting::all()->pluck('value', 'key');
+        $prefill = $request->query();
+        $bookingType = 'package';
+        $decorationModel = null;
 
-        if ($hasPending) {
-            return response()->json([
-                'available' => true,
-                'status' => 'pending_request',
-                'badge' => 'Pending Review On Date',
-                'badge_class' => 'bg-amber-100 text-amber-900 border-amber-300',
-                'message' => 'This date currently has a pending request from another client. You may still submit your request, and Aditya Utsav managers will confirm slot priority within 2 hours.'
-            ]);
-        }
-
-        return response()->json([
-            'available' => true,
-            'status' => 'available',
-            'badge' => 'Available For Request',
-            'badge_class' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
-            'message' => 'Great news! This decoration is fully available to be requested for your selected date in Bihar & UP service areas.'
-        ]);
+        return view('bookings.create', compact(
+            'packageModel',
+            'decorationModel',
+            'bookingType',
+            'addons',
+            'biharLocations',
+            'upLocations',
+            'authUser',
+            'settings',
+            'prefill'
+        ));
     }
 
     /**
-     * Store a new booking request in a database transaction with server-side price recalculation.
+     * Store a new booking request in a database transaction with server-side price recalculation
+     * and automatic customer account creation.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'decoration_id' => 'required|exists:decorations,id',
+            'booking_type' => 'required|in:decoration,package',
+            'decoration_id' => 'nullable|required_if:booking_type,decoration|exists:decorations,id',
+            'package_id' => 'nullable|required_if:booking_type,package|exists:packages,id',
             'event_type' => 'required|string|max:100',
             'event_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|string|max:20',
@@ -138,7 +240,7 @@ class BookingController extends Controller
             'pincode' => 'nullable|string|max:20',
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:30',
-            'customer_email' => 'nullable|email|max:255',
+            'customer_email' => 'required|email|max:255',
             'whatsapp_number' => 'nullable|string|max:30',
             'special_requirements' => 'nullable|string|max:2000',
             'selected_addons' => 'nullable|array',
@@ -154,24 +256,29 @@ class BookingController extends Controller
             ]);
         }
 
+        $tempPassword = null;
+        $createdNewAccount = false;
+        $targetUser = null;
+
         // Run database transaction to ensure atomic creation
-        $booking = DB::transaction(function () use ($validated, $request) {
-            // 1. Re-fetch decoration from DB
-            $decoration = Decoration::lockForUpdate()->findOrFail($validated['decoration_id']);
+        $booking = DB::transaction(function () use ($validated, $request, &$tempPassword, &$createdNewAccount, &$targetUser) {
+            $bookingType = $validated['booking_type'];
+            $baseAmount = 0.00;
+            $decorationId = null;
+            $packageId = null;
 
-            // 2. Re-verify availability
-            $eventDate = Carbon::parse($validated['event_date'])->format('Y-m-d');
-            $isBlocked = Booking::where('decoration_id', $decoration->id)
-                ->where('event_date', $eventDate)
-                ->whereIn('status', ['confirmed', 'advance_paid', 'scheduled', 'quoted'])
-                ->exists();
-
-            if ($isBlocked) {
-                throw new \Exception('This decoration was just confirmed for another client on this date. Please choose another date.');
+            // 1. Server-side price calculation (NEVER trust frontend price)
+            if ($bookingType === 'package') {
+                $package = Package::lockForUpdate()->findOrFail($validated['package_id']);
+                $packageId = $package->id;
+                $baseAmount = (float)$package->price;
+            } else {
+                $decoration = Decoration::lockForUpdate()->findOrFail($validated['decoration_id']);
+                $decorationId = $decoration->id;
+                $baseAmount = (float)$decoration->actual_booking_price;
             }
 
-            // 3. Recalculate price on the server (NEVER trust client amounts)
-            $baseAmount = $decoration->actual_booking_price;
+            // 2. Server-side add-on calculation
             $addonAmount = 0.00;
             $selectedAddonModels = collect();
 
@@ -187,6 +294,38 @@ class BookingController extends Controller
 
             $estimatedTotal = $baseAmount + $addonAmount;
 
+            // 3. User Account Resolution / Auto Creation
+            $customerEmail = trim(strtolower($validated['customer_email']));
+            $userId = Auth::id();
+
+            if (!$userId) {
+                $existingUser = User::where('email', $customerEmail)->first();
+                if ($existingUser) {
+                    $userId = $existingUser->id;
+                    $targetUser = $existingUser;
+                } else {
+                    // Automatically create customer account with secure random password
+                    $tempPassword = Str::random(10);
+                    $newUser = User::create([
+                        'name' => $validated['customer_name'],
+                        'email' => $customerEmail,
+                        'phone' => $validated['customer_phone'],
+                        'whatsapp' => $validated['whatsapp_number'] ?? $validated['customer_phone'],
+                        'city' => $validated['city'],
+                        'state' => $validated['state'],
+                        'address' => $validated['address_line'],
+                        'role' => 'customer',
+                        'is_active' => true,
+                        'password' => Hash::make($tempPassword),
+                    ]);
+                    $userId = $newUser->id;
+                    $targetUser = $newUser;
+                    $createdNewAccount = true;
+                }
+            } else {
+                $targetUser = Auth::user();
+            }
+
             // 4. Generate unique human-friendly booking reference: AU-YYYYMMDD-XXXXX
             $datePrefix = Carbon::now()->format('Ymd');
             do {
@@ -194,11 +333,15 @@ class BookingController extends Controller
                 $reference = "AU-{$datePrefix}-{$randSuffix}";
             } while (Booking::where('booking_reference', $reference)->exists());
 
+            $eventDate = Carbon::parse($validated['event_date'])->format('Y-m-d');
+
             // 5. Create Booking record
             $booking = Booking::create([
                 'booking_reference' => $reference,
-                'user_id' => Auth::id(),
-                'decoration_id' => $decoration->id,
+                'user_id' => $userId,
+                'booking_type' => $bookingType,
+                'decoration_id' => $decorationId,
+                'package_id' => $packageId,
                 'event_type' => $validated['event_type'],
                 'event_date' => $eventDate,
                 'start_time' => $validated['start_time'],
@@ -212,7 +355,7 @@ class BookingController extends Controller
                 'pincode' => $validated['pincode'] ?? null,
                 'customer_name' => $validated['customer_name'],
                 'customer_phone' => $validated['customer_phone'],
-                'customer_email' => $validated['customer_email'] ?? null,
+                'customer_email' => $customerEmail,
                 'whatsapp_number' => $validated['whatsapp_number'] ?? null,
                 'special_requirements' => $validated['special_requirements'] ?? null,
                 'base_amount' => $baseAmount,
@@ -237,16 +380,27 @@ class BookingController extends Controller
             BookingStatusHistory::create([
                 'booking_id' => $booking->id,
                 'status' => 'pending',
-                'note' => 'Booking request submitted by client via online portal.',
-                'changed_by_user_id' => Auth::id(),
+                'note' => 'Booking request submitted by client via Aditya Utsav portal.',
+                'changed_by_user_id' => $userId,
             ]);
 
             return $booking;
         });
 
-        // Redirect using PRG (POST-Redirect-GET) pattern to confirmation page
+        // If newly created customer account, dispatch email with temporary password & login
+        if ($createdNewAccount && $targetUser && $tempPassword) {
+            NotificationService::notifyCustomerAccountCreated($targetUser, $tempPassword, $booking);
+            // Log in newly registered customer
+            Auth::login($targetUser);
+        } elseif ($targetUser && !Auth::check()) {
+            Auth::login($targetUser);
+        }
+
+        // Send booking submitted notification
+        NotificationService::notifyBookingSubmitted($booking);
+
         return redirect()->route('booking.confirmation', ['reference' => $booking->booking_reference])
-            ->with('success', 'Your decoration booking request has been successfully submitted!');
+            ->with('success', 'Your booking request has been successfully submitted! Our team will verify and contact you.');
     }
 
     /**
@@ -254,9 +408,15 @@ class BookingController extends Controller
      */
     public function confirmation($reference)
     {
-        $booking = Booking::with(['decoration.category', 'decoration.images', 'addons.addon', 'statusHistories'])
-            ->where('booking_reference', $reference)
-            ->firstOrFail();
+        $booking = Booking::with([
+            'decoration.category',
+            'decoration.images',
+            'package',
+            'addons.addon',
+            'statusHistories'
+        ])
+        ->where('booking_reference', $reference)
+        ->firstOrFail();
 
         $settings = SiteSetting::all()->pluck('value', 'key');
 

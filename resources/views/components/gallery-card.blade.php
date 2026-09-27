@@ -5,13 +5,20 @@
     onclick="openGalleryLightbox('{{ $item->display_image }}', '{{ addslashes($item->title) }}', '{{ addslashes($item->caption ?: $item->description) }}', '{{ addslashes($item->location) }}', '{{ addslashes(ucfirst($item->category)) }}')"
 >
     <!-- Aspect container -->
-    <div class="aspect-[4/3] w-full overflow-hidden bg-brand-offwhite">
-        <img 
-            src="{{ $item->display_image }}" 
-            alt="{{ $item->title }} - Bihar Wedding Decoration" 
-            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-            loading="lazy"
-        />
+    <div class="aspect-[4/3] w-full overflow-hidden bg-brand-offwhite flex items-center justify-center">
+        @if($item->display_image)
+            <img 
+                src="{{ $item->display_image }}" 
+                alt="{{ $item->title }} - Bihar Wedding Decoration" 
+                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                loading="lazy"
+            />
+        @else
+            <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-brand-cream via-brand-offwhite to-amber-50/50 p-4 text-center">
+                <i class="fas fa-camera text-brand-gold text-2xl mb-1"></i>
+                <span class="text-xs font-serif font-bold text-brand-charcoal">{{ $item->title }}</span>
+            </div>
+        @endif
         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity"></div>
     </div>
 

@@ -4,18 +4,6 @@
 @section('meta_description', $decoration->tagline ?? $decoration->description)
 
 @section('content')
-<!-- Breadcrumbs -->
-<div class="bg-brand-offwhite border-b border-brand-light-border py-3">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-brand-muted-brown flex items-center gap-2">
-        <a href="{{ route('home') }}" class="hover:text-brand-burgundy">Home</a>
-        <span>/</span>
-        <a href="{{ route('decorations.index') }}" class="hover:text-brand-burgundy">Decorations</a>
-        <span>/</span>
-        <a href="{{ route('decorations.category', $decoration->category->slug) }}" class="hover:text-brand-burgundy">{{ $decoration->category->name }}</a>
-        <span>/</span>
-        <span class="text-brand-burgundy font-semibold truncate">{{ $decoration->name }}</span>
-    </div>
-</div>
 
 <section class="py-12 bg-brand-cream">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

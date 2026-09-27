@@ -26,7 +26,7 @@
         </div>
 
         <!-- Form -->
-        <form id="availability-modal-form" onsubmit="handleAvailabilitySubmit(event)" class="space-y-4">
+        <form id="availability-modal-form" method="GET" action="{{ route('booking.availability') }}" onsubmit="handleAvailabilitySubmit(event)" class="space-y-4">
             <div>
                 <label for="modal_event_type" class="block text-xs font-semibold text-brand-charcoal mb-1">
                     Event / Ceremony Type <span class="text-brand-royal-rose">*</span>
@@ -76,7 +76,7 @@
                     <label for="modal_event_date" class="block text-xs font-semibold text-brand-charcoal mb-1">
                         Ceremony Date <span class="text-brand-royal-rose">*</span>
                     </label>
-                    <input type="date" id="modal_event_date" name="event_date" required min="{{ date('Y-m-d') }}" class="w-full px-3.5 py-2 text-sm bg-brand-offwhite border border-brand-light-border rounded-lg focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy">
+                    <input type="date" id="modal_event_date" name="event_date" required min="{{ date('Y-m-d') }}" value="{{ date('Y-m-d', strtotime('+14 days')) }}" class="w-full px-3.5 py-2 text-sm bg-brand-offwhite border border-brand-light-border rounded-lg focus:outline-none focus:border-brand-burgundy focus:ring-1 focus:ring-brand-burgundy">
                 </div>
             </div>
 
@@ -98,11 +98,11 @@
 
             <div id="modal-result-msg" class="hidden p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-xs text-emerald-800">
                 <i class="fas fa-check-circle text-emerald-600 mr-1.5"></i>
-                <span>Our decor team is available on this date! We will call/WhatsApp you with the decor portfolio and quote options.</span>
+                <span>Date verified! Showing available decorations and packages for you...</span>
             </div>
 
             <div class="pt-2">
-                <button type="submit" id="modal-submit-btn" class="w-full py-3 px-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-lg border border-brand-gold shadow-md hover:shadow-gold-glow transition-all">
+                <button type="submit" id="modal-submit-btn" class="w-full py-3 px-4 text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-cream bg-brand-burgundy hover:bg-brand-deep-burgundy rounded-lg border border-brand-gold shadow-md hover:shadow-gold-glow transition-all cursor-pointer">
                     <i class="fas fa-calendar-check mr-2 text-brand-gold"></i>
                     Check Availability &amp; Get Price
                 </button>
@@ -119,25 +119,14 @@
 
 <script>
     function handleAvailabilitySubmit(e) {
-        e.preventDefault();
         const btn = document.getElementById('modal-submit-btn');
         const msg = document.getElementById('modal-result-msg');
-        const city = document.getElementById('modal_city')?.value;
-        const type = document.getElementById('modal_event_type')?.value;
-
         if (btn) {
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Checking Availability...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Checking Available Setups...';
             btn.disabled = true;
         }
-
-        setTimeout(() => {
-            if (btn) {
-                btn.innerHTML = '<i class="fas fa-check mr-2 text-emerald-300"></i> Availability Confirmed!';
-                btn.classList.remove('bg-brand-burgundy');
-                btn.classList.add('bg-emerald-800');
-            }
-            if (msg) msg.classList.remove('hidden');
-            showToast(`Good news! Aditya Utsav is available for ${type} in ${city}.`, 'success');
-        }, 600);
+        if (msg) msg.classList.remove('hidden');
+        // Allow form to submit naturally to booking.availability GET route
+        e.target.submit();
     }
 </script>

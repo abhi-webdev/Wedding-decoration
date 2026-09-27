@@ -1,38 +1,67 @@
 @props([
-    'decoration',
+    'decoration' => null,
+    'package' => null,
     'booking' => null,
     'eventData' => null,
     'isConfirmation' => false
 ])
 
 @php
-    $basePrice = $booking ? $booking->base_amount : $decoration->actual_booking_price;
-    $addonTotal = $booking ? $booking->addon_amount : 0;
-    $total = $booking ? $booking->estimated_total : $basePrice;
+    if ($booking) {
+        $itemName = $booking->booked_item_name;
+        $itemImage = $booking->booked_item_image;
+        $itemType = $booking->booked_item_type_label;
+        $itemLocation = $booking->city . ', ' . $booking->state;
+        $basePrice = $booking->base_amount;
+        $addonTotal = $booking->addon_amount;
+        $total = $booking->estimated_total;
+    } elseif ($package) {
+        $itemName = $package->name;
+        $itemImage = $package->display_image;
+        $itemType = 'Wedding Package';
+        $itemLocation = 'Siwan & Bihar Service Areas';
+        $basePrice = (float)$package->price;
+        $addonTotal = 0;
+        $total = $basePrice;
+    } else {
+        $itemName = $decoration?->name ?? 'Wedding Decoration';
+        $itemImage = $decoration?->safe_primary_image;
+        $itemType = $decoration?->category?->name ?? 'Wedding Decoration';
+        $itemLocation = $decoration?->location ?? 'Siwan, Bihar';
+        $basePrice = $decoration ? (float)$decoration->actual_booking_price : 0;
+        $addonTotal = 0;
+        $total = $basePrice;
+    }
 @endphp
 
 <div class="bg-white rounded-2xl p-6 border border-brand-light-border shadow-soft-luxury space-y-5">
     
-    <!-- Decoration Snapshot Header -->
+    <!-- Item Snapshot Header -->
     <div class="flex items-start gap-4 pb-4 border-b border-brand-light-border/70">
-        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border">
-            <img 
-                src="{{ $decoration->safe_primary_image }}" 
-                alt="{{ $decoration->name }}" 
-                class="w-full h-full object-cover"
-                onerror="this.src='{{ asset('images/placeholders/decoration-placeholder.svg') }}'"
-            />
+        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden bg-brand-offwhite flex-shrink-0 border border-brand-light-border flex items-center justify-center">
+            @if($itemImage)
+                <img 
+                    src="{{ $itemImage }}" 
+                    alt="{{ $itemName }}" 
+                    class="w-full h-full object-cover"
+                />
+            @else
+                <div class="p-2 text-center text-brand-muted-brown flex flex-col items-center justify-center">
+                    <i class="fas fa-camera text-brand-gold text-lg mb-1"></i>
+                    <span class="text-[9px] font-semibold">Aditya Utsav</span>
+                </div>
+            @endif
         </div>
         <div class="min-w-0 flex-grow space-y-1">
             <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-brand-burgundy bg-brand-burgundy/10 px-2 py-0.5 rounded">
-                {{ $decoration->category->name ?? 'Wedding Decoration' }}
+                {{ $itemType }}
             </span>
             <h3 class="font-serif text-base sm:text-lg font-bold text-brand-charcoal truncate">
-                {{ $decoration->name }}
+                {{ $itemName }}
             </h3>
             <div class="text-xs text-brand-muted-brown flex items-center gap-1">
                 <i class="fas fa-map-marker-alt text-brand-gold text-[11px]"></i>
-                <span class="truncate">{{ $decoration->location }}</span>
+                <span class="truncate">{{ $itemLocation }}</span>
             </div>
         </div>
     </div>

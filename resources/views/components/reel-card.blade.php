@@ -6,13 +6,21 @@
     aria-label="Watch {{ $video->title }} wedding decoration reel"
 >
     <!-- Video Thumbnail Poster -->
-    <img 
-        src="{{ $video->safe_thumbnail_url }}" 
-        alt="{{ $video->title }} - Traditional Bihar wedding decoration setup by Aditya Utsav" 
-        class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out opacity-90"
-        loading="lazy"
-        onerror="this.src='https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'"
-    />
+    @if($video->safe_thumbnail_url)
+        <img 
+            src="{{ $video->safe_thumbnail_url }}" 
+            alt="{{ $video->title }} - Traditional Bihar wedding decoration setup by Aditya Utsav" 
+            class="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-700 ease-out opacity-90"
+            loading="lazy"
+        />
+    @else
+        <div class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-stone-900 via-brand-deep-burgundy to-stone-950 p-6 text-center">
+            <div class="w-14 h-14 rounded-full bg-brand-gold/20 text-brand-gold flex items-center justify-center mb-2 border border-brand-gold/40">
+                <i class="fas fa-video text-xl"></i>
+            </div>
+            <span class="text-[11px] text-brand-gold-light uppercase tracking-wider font-semibold">{{ $video->event_type_label }}</span>
+        </div>
+    @endif
 
     <!-- Multi-tier Gradient Overlay -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/40 group-hover:from-brand-deep-burgundy/95 group-hover:via-black/30 transition-colors duration-500"></div>

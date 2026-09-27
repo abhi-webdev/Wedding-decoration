@@ -5,12 +5,6 @@
 
 @section('content')
 
-    <!-- Breadcrumb -->
-    <x-breadcrumb :items="[
-        ['label' => 'Home', 'url' => route('home')],
-        ['label' => 'Service Areas', 'url' => '']
-    ]" />
-
     <!-- Hero Banner Section -->
     <section class="relative bg-brand-burgundy py-14 sm:py-20 text-white overflow-hidden">
         <div class="absolute inset-0 opacity-20 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:16px_16px]"></div>
